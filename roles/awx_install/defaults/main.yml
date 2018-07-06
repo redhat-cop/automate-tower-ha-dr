@@ -1,0 +1,37 @@
+---
+# Ansible repository location. This should be the
+# root of the repo, and does not include the /deb or /rpm path
+aw_repo_url: "http://releases.ansible.com/ansible-tower"
+
+# Unprivileged User Account (for now, don't change this username)
+aw_user: awx
+aw_group: awx
+
+# The default state for new installs
+pendo_state: detailed
+
+# Django Options
+admin_username: admin
+admin_email: admin@example.com
+
+# Logging Options
+log_level: ERROR
+log_rotate_size: 5242880
+log_backup_count: 5
+syslog_facility: local0
+syslog_level: ERROR
+
+# Apache Options
+# these addresses should match the external name of your server as you
+# are going to access them from other machines
+awx_install_httpd_server_name: 'localhost'
+
+# Memcache binding
+awx_install_memcached_bind: 'unix:/var/run/memcached/memcached.sock'
+
+# Params
+awx_install_exec_vars_only: false
+awx_install_supervisor_init_name: None
+awx_install_supervisor_socket_location: None
+awx_install_pg_init_name: None
+awx_install_home: '/var/lib/awx'

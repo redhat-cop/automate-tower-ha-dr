@@ -1,0 +1,78 @@
+---
+- name: Preflight check - require new enough Ansible
+  fail:
+    msg: "Your current version of Ansible ({{ ansible_version['full']}}) is too old for this version of Ansible Tower. Please upgrade."
+  when: ansible_version.full|version_compare('2.1', '<')
+
+- name: Preflight check - Fail if this machine lacks sufficient RAM.
+  fail:
+    msg: This machine does not have sufficient RAM to run Ansible Tower.
+  when: ansible_memtotal_mb < required_ram|int
+
+- name: Preflight check - Get umask
+  shell: umask
+  register: umask
+  changed_when: False
+
+- name: Preflight check - Get Hard Max FD limit
+  shell: ulimit -H -n
+  register: ulimit
+  changed_when: False
+
+- name: Preflight check - Does the system have a standard umask?
+  fail:
+    msg: 'The umask of the system ({{ umask.stdout.strip() }}) prevents successful installation. We suggest a standard umask such as 0022.'
+  when: umask.stdout.strip()[-2:] not in ('00', '02', '20', '22')
+
+- name: Preflight check - Verify minimum open fds
+  fail:
+    msg: 'The default max number of file descriptors is too low {{ ulimit.stdout }} should be {{ min_open_fds }}'
+  when: ulimit.stdout|int < min_open_fds|int
+
+- name: Preflight check - Get /var/log permissions
+  stat: path=/var/log
+  register: vl_st
+
+- name: Preflight check - Does /var/log have appropriate permissions?
+  fail:
+    msg: 'The permissions on /var/log ({{ vl_st.stat.mode }}) prevent successful installation. /var/log must be world-readable.'
+  when: not vl_st.stat.roth
+
+- name: Preflight check - Read in tower version
+  slurp:
+    src: "{{ preflight_awx_home }}/.tower_version"
+  register: result
+  ignore_errors: true
+
+- name: Preflight check - User must be on Tower 3.0.x to upgrade to 3.1.x
+  fail:
+    msg: 'Please upgrade to 3.0.x before upgrading to 3.1.x'
+  when: "result.content is defined and result.content | b64decode | version_compare('3.0', '<')"
+
+- name: Preflight check - Passwords must be defined for a fresh install
+  fail:
+    msg: 'Please configure passwords in the inventory file before running setup'
+  when: "result.content is not defined and ((pg_password|default('') == '') or (admin_password|default('') == ''))"
+
+- name: Preflight check - rabbitmq_password must be defined
+  fail:
+    msg: 'Please set rabbitmq_password in the inventory file before running setup'
+  when: "rabbitmq_password|default('') == ''"
+
+- name: Preflight check - check Tower license type
+  shell: awx-manage check_license
+  become_user: '{{ preflight_awx_user }}'
+  become: True
+  register: license_type
+  when: "result.content is defined"
+  ignore_errors: True  # `awx-manage check_license` is only available post-3.2
+
+- name: Preflight check - disallow localhost target for cluster installs
+  fail:
+    msg: "'localhost' is not allowed as a target host for cluster installs. Use the hostname or address instead (ansible_connection=local can still be used)"
+  when: play_hosts|length > 1 and ansible_host == "localhost"
+
+- name: Preflight check - check Tower license validity for upgrades
+  fail:
+    msg: "A valid Ansible Tower license is required to upgrade."
+  when: "result.content is defined and license_type is defined and license_type.stdout == 'open'"

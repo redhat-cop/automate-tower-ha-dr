@@ -1,0 +1,23 @@
+---
+# Specify the tower deb name used when installing tower.
+tower_package_deb: '{{ packages_ubuntu_tower_package_name }}={{ packages_ubuntu_tower_package_version }}-*'
+
+packages_ubuntu_install_postgres: false
+packages_ubuntu_install_tower: true
+
+awx_install_home: '/var/lib/awx'
+
+# Indicate whether to verify gpg signatures during install
+gpgcheck: 1
+
+# Indicate whether to upgrade Ansible as well as Tower
+upgrade_ansible_with_tower: false
+
+#packages_ubuntu_tower_package_name: ''
+#packages_ubuntu_tower_package_version: ''
+
+# Pre-defined dynamically determined variables to satisfy ansible 1.9 and ansible 2.0 deprecation warnings
+apt_keys: []
+apt_repos: []
+ubuntu_dependencies: []
+

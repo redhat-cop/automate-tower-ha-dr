@@ -1,0 +1,12 @@
+---
+# clean drops the database
+# create adds instructions to create the database
+# Note: user needs access to postgres template when restoring
+- name: Perform a PostgreSQL dump.
+  shell: "pg_dump --clean --create --host='{{ tower_db_settings.default.HOST }}' --port={{ tower_db_settings.default.PORT }} --username='{{ tower_db_settings.default.USER  }}' --dbname='{{ tower_db_settings.default.NAME }}' --exclude-table=main_instance --exclude-table=main_instancegroup --exclude-table=main_instancegroup_instances > tower.db"
+  args:
+    chdir: '{{ backup_dir.rstrip("/") }}/common/'
+  environment:
+    PGPASSWORD: "{{ tower_db_settings.default.PASSWORD }}"
+  no_log: True
+  when: inventory_hostname == groups['tower'][0]

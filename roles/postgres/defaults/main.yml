@@ -1,0 +1,10 @@
+---
+postgres_run_dir: '/var/run/postgresql'
+postgres_username: 'awx'
+postgres_database: 'awx'
+postgres_allowed_ipv4: '127.0.0.1/32'
+postgres_allowed_ipv6: '::1/128'
+#postgres_password: 'password'
+#postgres_host: None
+#postgres_port: None
+postgres_exec_vars_only: false

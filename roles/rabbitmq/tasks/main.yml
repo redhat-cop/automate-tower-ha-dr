@@ -1,0 +1,100 @@
+---
+
+- name: check whether rabbitmq is already reachable as a node
+  command: rabbitmqctl -n rabbitmq@{{ rabbitmq_env_host }} status
+  register: rabbitmq_check
+  ignore_errors: true
+  changed_when: false
+
+- name: stop the rabbitmq service before updating the nodename
+  service: name=rabbitmq-server state=stopped
+
+- name: Apply RabbitMQ environment Node Name
+  template:
+    dest: /etc/rabbitmq/rabbitmq-env.conf
+    force: yes
+    src: rabbitmq-env.conf.j2
+    mode: '0640'
+    owner: 'rabbitmq'
+    group: 'rabbitmq'
+
+- name: Remove old RabbitMQ config
+  file:
+    path: /etc/rabbitmq/rabbitmq.conf
+    state: absent
+
+- name: Apply RabbitMQ Configuration
+  template:
+    dest: /etc/rabbitmq/rabbitmq.config
+    force: yes
+    src: rabbitmq.config.j2
+    mode: '0640'
+    owner: 'rabbitmq'
+    group: 'rabbitmq'
+
+- name: Apply RabbitMQ Cookie
+  template:
+    dest: /var/lib/rabbitmq/.erlang.cookie
+    force: yes
+    src: erlang.cookie.j2
+    mode: '0600'
+    owner: 'rabbitmq'
+    group: 'rabbitmq'
+
+- name: start and enable the rabbitmq service
+  service:
+    name: rabbitmq-server
+    state: started
+    enabled: yes
+
+- name: wait for rabbitmq service to be running
+  wait_for:
+    port: "{{ rabbitmq_port }}"
+
+- name: Activate rabbitmq plugins
+  rabbitmq_plugin:
+    names: rabbitmq_management,rabbitmq_management_agent,rabbitmq_management_visualiser,rabbitmq_federation,rabbitmq_federation_management
+    state: enabled
+
+- name: create the rabbitmq vhost
+  rabbitmq_vhost:
+    name: "{{ rabbitmq_vhost }}"
+    state: present
+    node: "rabbitmq@{{ rabbitmq_env_host }}"
+
+- name: Set Cluster HA Policy
+  shell: "rabbitmqctl set_policy ha-all \".*\" '{\"ha-mode\":\"all\", \"ha-sync-mode\":\"automatic\"}' -p {{ rabbitmq_vhost }}"
+  when: inventory_hostname == groups['tower'][0]
+
+- name: Stop rabbitmq app if we arent the first node
+  shell: rabbitmqctl stop_app
+  when: inventory_hostname != groups['tower'][0]
+
+- name: Set Primary RabbitMQ hostname
+  set_fact:
+    rabbitmq_real_host: "{{ rabbitmq_env_host }}"
+
+- name: Cluster all nodes to the first node
+  shell: "rabbitmqctl join_cluster rabbitmq@{{ hostvars[groups['tower'][0]].rabbitmq_real_host }}"
+  when: inventory_hostname != groups['tower'][0]
+
+- name: Start rabbitmq app if we arent the first node
+  shell: rabbitmqctl start_app
+  when: inventory_hostname != groups['tower'][0]
+
+- name: create the rabbitmq user
+  rabbitmq_user:
+    user: "{{ rabbitmq_username }}"
+    password: "{{ rabbitmq_password }}"
+    vhost: "{{ rabbitmq_vhost }}"
+    configure_priv: .*
+    read_priv: .*
+    write_priv: .*
+    state: present
+    force: yes
+    node: "rabbitmq@{{ rabbitmq_env_host }}"
+  when: inventory_hostname == groups['tower'][0]
+
+- name: Set rabbitmq administrator status
+  shell: "rabbitmqctl set_user_tags {{ rabbitmq_username }} administrator"
+  when: rabbitmq_enable_manager|bool

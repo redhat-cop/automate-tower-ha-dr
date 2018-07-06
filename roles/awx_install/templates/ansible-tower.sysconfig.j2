@@ -1,0 +1,8 @@
+# The settings in this file are used by the service ansible-tower.
+
+# List of services managed by Ansible Tower (space-delimited).
+{% if awx_install_database == 'external' %}
+TOWER_SERVICES="rabbitmq-server nginx {{ sup_init_name }}"
+{% else %}
+TOWER_SERVICES="{{ awx_install_pg_init_name }} rabbitmq-server nginx {{ sup_init_name }}"
+{% endif %}

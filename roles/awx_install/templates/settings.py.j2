@@ -1,0 +1,43 @@
+# AWX settings file
+
+###############################################################################
+# MISC PROJECT SETTINGS
+###############################################################################
+
+ADMINS = (
+   #('Joe Admin', 'joeadmin@example.com'),
+)
+
+STATIC_ROOT = '{{awx_install_home}}/public/static'
+
+PROJECTS_ROOT = '{{awx_install_home}}/projects'
+
+JOBOUTPUT_ROOT = '{{awx_install_home}}/job_status'
+
+SECRET_KEY = file('/etc/tower/SECRET_KEY', 'rb').read().strip()
+
+ALLOWED_HOSTS = ['*']
+
+INTERNAL_API_URL = 'http://127.0.0.1:{{ http_port|default(80) }}'
+
+###############################################################################
+# EMAIL SETTINGS
+###############################################################################
+
+SERVER_EMAIL = 'root@{{awx_install_httpd_server_name}}'
+DEFAULT_FROM_EMAIL = 'webmaster@{{awx_install_httpd_server_name}}'
+EMAIL_SUBJECT_PREFIX = '[AWX] '
+
+EMAIL_HOST = 'localhost'
+EMAIL_PORT = 25
+EMAIL_HOST_USER = ''
+EMAIL_HOST_PASSWORD = ''
+EMAIL_USE_TLS = False
+
+###############################################################################
+# LOGGING SETTINGS
+###############################################################################
+
+# Note: This setting may be overridden by database settings.
+PENDO_TRACKING_STATE = '{{ pendo_state }}'
+

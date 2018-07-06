@@ -1,0 +1,29 @@
+---
+# Handlers for common notifications.
+
+- name: restart supervisor
+  debug:
+    msg: Restarting supervisor.
+  changed_when: true
+  notify:
+    - Stop supervisor.
+    - Wait for supervisor to stop.
+    - Start supervisor.
+
+- name: Stop supervisor.
+  service:
+    name: '{{ sup_init_name }}'
+    state: stopped
+
+- name: Wait for supervisor to stop.
+  stat:
+    path: '{{ sup_socket_location }}'
+  register: result
+  until: not result.stat.exists
+  retries: 10
+  delay: 2
+
+- name: Start supervisor.
+  service:
+    name: '{{ sup_init_name }}'
+    state: started

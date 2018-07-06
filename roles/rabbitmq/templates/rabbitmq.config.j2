@@ -1,0 +1,6 @@
+[
+ {rabbit,
+  [{loopback_users, []},
+   {tcp_listeners, [{{ rabbitmq_port }}]},
+   {cluster_partition_handling, pause_minority}]}
+].

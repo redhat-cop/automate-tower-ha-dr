@@ -1,0 +1,30 @@
+---
+- name: Set extra queues for this host
+  set_fact:
+    rabbitmq_listening_queues: "{{ awx_instance_groups }} + {{ rabbitmq_controlling_queues }} + [ '{{ local_queue }}' ]"
+
+- name: install supervisor config
+  template:
+    src: 'tower.conf.j2'
+    dest: '{{ sup_conf_location }}'
+    force: yes
+
+# This is necessary due to an error where awx did not have permission to read
+# /var/run/supervisor. Telling systemd to recreate its tmp files fixes this.
+- name: Recreate systemd tmp files
+  command: systemd-tmpfiles --create
+  when: ansible_os_family == "RedHat"
+
+- name: start/enable supervisord process
+  service:
+    name: '{{ sup_init_name }}'
+    state: started
+    enabled: yes
+
+- name: Wait for the supervisor socket
+  wait_for:
+    path: '{{ sup_socket_location }}'
+    timeout: 30
+
+- name: reload supervisord configuration via supervisorctl
+  command: supervisorctl reload

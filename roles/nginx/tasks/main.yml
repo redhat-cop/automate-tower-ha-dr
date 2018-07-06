@@ -1,0 +1,5 @@
+---
+# Tasks for configuring NGINX HTTP server.
+- include: vars.yml
+- include: tasks.yml
+  when: "nginx_exec_vars_only == false"

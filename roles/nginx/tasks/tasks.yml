@@ -1,0 +1,92 @@
+---
+- name: Determine if selinux is enabled
+  command: getenforce
+  register: getenforce
+  ignore_errors: true
+  changed_when: false
+
+- name: Open up permissions on httpd.
+  seboolean:
+    name: '{{item}}'
+    persistent: yes
+    state: 'true'
+  when: getenforce|success and getenforce.stdout.lower() != "disabled"
+  with_items:
+    - httpd_can_network_connect
+
+- name: create self signed SSL certificates
+  command: openssl req -x509 -nodes -sha256 -days 99999 -newkey rsa:2048 -keyout /etc/tower/tower.key -out /etc/tower/tower.cert -subj "/CN=localhost"
+  args:
+    creates: /etc/tower/tower.cert
+  when: inventory_hostname == groups['tower'][0]
+  notify:
+    - restart nginx
+
+- name: set permissions on SSL certificate
+  file:
+    path: '{{ item }}'
+    group: '{{ aw_group }}'
+    follow: yes
+    mode: 0640
+    owner: root
+  when: inventory_hostname == groups['tower'][0]
+  with_items:
+  - /etc/tower/tower.cert
+  - /etc/tower/tower.key
+
+- name: slurp self-signed SSL certificate
+  slurp:
+    src: /etc/tower/tower.cert
+  when: inventory_hostname == groups['tower'][0]
+  register: tower_cert
+  no_log: True
+
+- name: slurp self-signed SSL key
+  slurp:
+    src: /etc/tower/tower.key
+  when: inventory_hostname == groups['tower'][0]
+  register: tower_key
+  no_log: True
+
+- name: place self-signed SSL certificates
+  copy:
+    content: "{{ hostvars[groups['tower'][0]]['tower_cert']['content'].decode('base64') }}"
+    dest: /etc/tower/tower.cert
+    group: '{{ aw_group }}'
+    follow: yes
+    mode: 0640
+    force: false
+    owner: root
+  when: inventory_hostname != groups['tower'][0]
+  notify:
+    - restart nginx
+
+- name: place self-signed SSL key file
+  copy:
+    content: "{{ hostvars[groups['tower'][0]]['tower_key']['content'].decode('base64') }}"
+    dest: /etc/tower/tower.key
+    group: '{{ aw_group }}'
+    follow: yes
+    mode: 0640
+    force: false
+    owner: root
+  when: inventory_hostname != groups['tower'][0]
+  notify:
+    - restart nginx
+
+- name: Install Tower nginx.conf
+  template:
+    src: nginx.conf
+    dest: '/etc/nginx/nginx.conf'
+    force: True
+    owner: root
+    group: root
+  notify:
+    - restart nginx
+
+- name: start nginx and configure to startup automatically
+  service:
+    name: '{{ nginx_init_name }}'
+    state: started
+    enabled: yes
+

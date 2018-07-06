@@ -1,0 +1,33 @@
+---
+- name: Check for custom ui logo
+  stat:
+    path: '{{ awx_install_home }}/public/static/assets/custom_console_logo.png'
+  register: ui_logo
+
+- name: Check for custom ui settings
+  stat:
+    path: '{{ awx_install_home}}/public/static/local_settings.json'
+  register: ui_config
+
+- name: Move away custom ui logo
+  command: 'mv {{ awx_install_home }}/public/static/assets/custom_console_logo.png {{ awx_install_home }}'
+  when: ui_logo.stat.exists
+
+- name: Move away custom ui settings
+  command: 'mv {{ awx_install_home }}/public/static/local_settings.json {{ awx_install_home }}'
+  when: ui_config.stat.exists
+
+- name: Install the Tower RPM.
+  yum:
+    name: '{{tower_package_rpm}}'
+    enablerepo: "{{ tower_enable_repo }}"
+    disable_gpg_check: '{{not gpgcheck|bool}}'
+    state: latest
+  tags: packages_el_yum_install_tower
+
+- name: Upgrade Ansible
+  yum:
+    name: ansible
+    state: latest
+  when: upgrade_ansible_with_tower
+

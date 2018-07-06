@@ -1,0 +1,5 @@
+---
+sup_init_name: "supervisor"
+sup_conf_location: "/etc/supervisor/conf.d/tower.conf"
+sup_socket_location: "/var/run/supervisor.sock"
+sup_celery_add_lang: true

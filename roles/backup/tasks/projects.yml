@@ -1,0 +1,11 @@
+---
+- name: Create a directory for manual projects.
+  file:
+    path: '{{ backup_dir.rstrip("/") }}/{{ now }}/projects/'
+    group: root
+    mode: 0755
+    owner: root
+    state: directory
+
+- name: Copy project directories from tower
+  shell: cd {{backup_awx_home}}/projects; find . -type d -regex '.*_[0-9]+__.*' | sed 's/\.\///' | rsync --exclude-from=- -auq {{ backup_awx_home }}/projects/ {{ backup_dir.rstrip("/") }}/{{ now }}/projects/

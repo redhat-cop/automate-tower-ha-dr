@@ -1,0 +1,39 @@
+---
+- name: If Ansible does not provide a system UUID, get a random one.
+  shell: "echo 'import uuid; print(uuid.uuid4())' | python"
+  register: system_uuid
+  changed_when: False
+
+- name: Write a ha.conf file to /etc/tower that contains the system UUID.
+  template:
+    dest: /etc/tower/conf.d/ha.py
+    force: no
+    mode: '0640'
+    group: '{{ aw_group }}'
+    owner: root
+    src: ha.py
+
+- name: Register the tower instance in the database.
+  shell: awx-manage register_instance --hostname="{{ cluster_host_identifier }}"
+  args:
+    executable: /bin/bash
+  become_user: '{{ aw_user }}'
+  become: True
+  register: register_instance
+  changed_when: "'changed: True' in register_instance.stdout"
+
+- name: Register tower instance groups.
+  shell: awx-manage register_queue --queuename="{{ item }}" --hostnames="{{ cluster_host_identifier }}"
+  args:
+    executable: /bin/bash
+  become_user: '{{ aw_user }}'
+  become: True
+  register: register_queue
+  changed_when: "'Added' in register_queue.stdout"
+  with_items: "{{ awx_instance_groups }}"
+
+- name: Create the default organization if it is needed.
+  shell: awx-manage create_preload_data
+  register: cdo
+  changed_when: "'added' in cdo.stdout"
+  when: create_preload_data|bool and inventory_hostname == groups['tower'][0]

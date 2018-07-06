@@ -1,0 +1,16 @@
+---
+- name: Remove the restore directory.
+  file:
+    path: '{{ backup_dir.rstrip("/") }}/restore/'
+    state: absent
+
+- name: start web service.
+  service:
+    name: '{{ web_service_name }}'
+    state: started
+
+- name: start supervisord.
+  service:
+    name: '{{ supervisor_service_name }}'
+    state: started
+

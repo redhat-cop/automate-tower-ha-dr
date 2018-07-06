@@ -1,0 +1,99 @@
+[unix_http_server]
+chown = awx:awx
+
+[supervisord]
+umask = 022
+minfds = 4096
+
+[program:awx-celeryd]
+command = /usr/bin/awx-manage celery worker -l debug --autoscale={{celery_autoscale}} -Ofair -Q tower_scheduler,tower_broadcast_all,{{ rabbitmq_listening_queues|join(",") }} -n celery@{{ rabbitmq_supervisord_host }}
+directory = {{ supervisor_awx_home }}
+environment = {% if sup_celery_add_lang|default(false) %}LANGUAGE="en_US.UTF-8",LANG="en_US.UTF-8",LC_ALL="en_US.UTF-8",LC_CTYPE="en_US.UTF-8",{% endif %}HOME="{{ awx_install_home }}",USER="{{ aw_user }}"
+user = {{ aw_user }}
+autostart = true
+autorestart = true
+stopwaitsecs = 5
+redirect_stderr=true
+stdout_logfile = /var/log/supervisor/awx-celeryd.log
+stdout_logfile_maxbytes = 10MB
+stdout_logfile_backups = 10
+
+[program:awx-celeryd-beat]
+command = /usr/bin/awx-manage celery beat -l debug --pidfile= -s {{ supervisor_awx_home }}/beat.db
+directory = {{ supervisor_awx_home }}
+user = {{ aw_user }}
+autostart = true
+autorestart = true
+stopwaitsecs = 5
+redirect_stderr=true
+stdout_logfile = /var/log/supervisor/awx-celeryd-beat.log
+stdout_logfile_maxbytes = 10MB
+stdout_logfile_backups = 10
+
+[program:awx-callback-receiver]
+command = /usr/bin/awx-manage run_callback_receiver
+directory = {{ supervisor_awx_home }}
+user = {{ aw_user }}
+autostart = true
+autorestart = true
+stopwaitsecs = 5
+redirect_stderr=true
+stdout_logfile = /var/log/supervisor/awx-callback-receiver.log
+stdout_logfile_maxbytes = 10MB
+stdout_logfile_backups = 10
+
+[program:awx-channels-worker]
+command = /usr/bin/awx-manage runworker --only-channels websocket.*
+directory = {{ supervisor_awx_home }}
+user = {{ aw_user }}
+autostart = true
+autorestart = true
+stopwaitsecs = 5
+redirect_stderr = true
+stdout_logfile = /var/log/supervisor/awx-channels-worker.log
+stdout_logfile_maxbytes = 10MB
+stdout_logfile_backups = 10
+
+[program:awx-uwsgi]
+command = {{ supervisor_awx_home }}/venv/awx/bin/uwsgi --socket 127.0.0.1:8050 --module=awx.wsgi:application --vacuum --processes=5 --harakiri=120 --no-orphans --master --max-requests=1000 --master-fifo=/var/lib/awx/awxfifo --lazy-apps -b 32768
+directory = {{ supervisor_awx_home }}
+user = {{ aw_user }}
+autostart = true
+autorestart = true
+stopwaitsecs = 15
+stopsignal = INT
+redirect_stderr = true
+stdout_logfile = /var/log/supervisor/awx-uwsgi.log
+stdout_logfile_maxbytes = 10MB
+stdout_logfile_backups = 10
+
+[program:awx-daphne]
+command = {{ supervisor_awx_home }}/venv/awx/bin/daphne -b 127.0.0.1 -p 8051 awx.asgi:channel_layer
+directory = {{ supervisor_awx_home }}
+user = {{ aw_user }}
+autostart = true
+autorestart = true
+stopwaitsecs = 5
+redirect_stderr = true
+stdout_logfile = /var/log/supervisor/awx-daphne.log
+stdout_logfile_maxbytes = 10MB
+stdout_logfile_backups = 10
+
+[group:tower-processes]
+programs=awx-celeryd,awx-celeryd-beat,awx-callback-receiver,awx-channels-worker,awx-uwsgi,awx-daphne
+priority=5
+
+[eventlistener:exit-event-listener]
+command=/usr/bin/failure-event-handler
+stderr_logfile = /var/log/supervisor/failure-event-handler.stderr.log
+stderr_logfile_maxbytes = 10MB
+stderr_logfile_backups = 10
+events=PROCESS_STATE
+priority=0
+
+# NOTE: This is useful if the socket service encounters a problem
+#       where it consumes too much memory.  You will need to install
+#       superlance:   pip install superlance
+# [eventlistener:memmon]
+# command=memmon -p awx-socketio-service=200MB
+# events=TICK_60

@@ -1,0 +1,30 @@
+---
+- name: Dump the new Tower instance topology
+  shell: "pg_dump --clean --create --host='{{ tower_db_settings.default.HOST }}' --port={{ tower_db_settings.default.PORT }} --username='{{ tower_db_settings.default.USER }}' --dbname='{{ tower_db_settings.default.NAME }}' --table=main_instance --table=main_instancegroup --table=main_instancegroup_instances > new_instance_topology.db"
+  args:
+    chdir: '{{ backup_dir.rstrip("/") }}/restore/'
+  environment:
+    PGPASSWORD: "{{ tower_db_settings.default.PASSWORD }}"
+  no_log: True
+  when: inventory_hostname == groups['tower'][0]
+
+# use dbname 'template1' to connect to the remote database
+# Since we drop the database as part of our backup/restore, we can't use the awx
+# database for this command.
+- name: Perform a PostgreSQL restore (external).
+  shell: "psql --host='{{ tower_db_settings.default.HOST }}' --port={{ tower_db_settings.default.PORT }} --username='{{ tower_db_settings.default.USER  }}' --dbname='template1' < ./tower.db && psql --host='{{ tower_db_settings.default.HOST }}' --port={{ tower_db_settings.default.PORT }} --username='{{ tower_db_settings.default.USER  }}' --dbname='{{ tower_db_settings.default.NAME }}' < ./new_instance_topology.db"
+  args:
+    chdir: '{{ backup_dir.rstrip("/") }}/restore/'
+  environment:
+    PGPASSWORD: "{{ tower_db_settings.default.PASSWORD }}"
+  no_log: True
+  when: restore_database == 'external' and inventory_hostname == groups['tower'][0]
+
+- name: Perform a PostgreSQL restore (internal).
+  shell: "psql --dbname='template1' < tower.db && psql --dbname='{{ tower_db_settings.default.NAME }}' < new_instance_topology.db"
+  args:
+    chdir: '{{ backup_dir.rstrip("/") }}/restore/'
+  become_user: postgres
+  no_log: True
+  become: True
+  when: restore_database == 'internal' and inventory_hostname == groups['tower'][0]

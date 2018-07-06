@@ -1,0 +1,38 @@
+---
+- name: Stop postgres 9.4
+  service:
+    name: postgresql-9.4
+    state: stopped
+    enabled: no
+
+- name: init postgresql (el-only)
+  command: '{{ pg_initdb_command }}'
+  args:
+    creates: /var/lib/pgsql/9.6/data/PG_VERSION
+
+- block:
+  - name: pg_upgrade
+    command: |
+      /usr/pgsql-9.6/bin/pg_upgrade \
+        -d /var/lib/pgsql/9.4/data \
+        -D /var/lib/pgsql/9.6/data \
+        -b /usr/pgsql-9.4/bin \
+        -B /usr/pgsql-9.6/bin
+    args:
+      chdir: /var/lib/pgsql
+    become: True
+    become_user: postgres
+    no_log: True
+  rescue:
+  - service:
+      name: postgresql-9.4
+      state: started
+      enabled: yes
+  - fail:
+      msg: "Postgres upgrade to 9.6 failed."
+    no_log: False
+
+- name: Uninstall Postgres 9.4
+  yum:
+    name: postgresql94*
+    state: absent

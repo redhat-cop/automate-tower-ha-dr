@@ -1,0 +1,54 @@
+---
+- name: Ensure expected variables are defined
+  fail: msg="{{ item }} value missing and is required"
+  when: hostvars[inventory_hostname][item] is not defined
+  with_items: "{{ check_config_static_required_vars }}"
+  register: check_config_static_results
+  tags: check_config_static_vars
+
+- name: Detect unsupported HA inventory file
+  fail:
+    msg: 'Detected an unsupported HA inventory file, please consult the documentation and update the inventory file accordingly.'
+  when: "'primary' in groups or 'secondary' in groups"
+
+- name: Ensure at least one tower host is defined
+  fail: msg="Must specify at least one host in the tower group {{ groups['tower']|length }}"
+  when: "groups['tower']|length < 1"
+  tags: check_config_static_single_primary
+
+- name: Ensure only one database host exists
+  fail: msg="One, and only one, database host may be specified. Database group hosts {{ groups['database'] }}"
+  when: "groups['database'] is defined and groups['database']|length > 1"
+  tags: check_config_static_single_database
+
+- name: Ensure when postgres host is defined that the port is defined
+  fail: msg="pg_host variable defined but pg_port is not defined. Please define it."
+  when: "pg_host is defined and pg_port is not defined"
+  register: check_config_static_results
+  tags: check_config_static_var_pairs
+
+- name: Ensure that when a database host is specified, that pg_host is defined
+  fail: msg="pg_host required when hosts in the database group exist."
+  when: "groups['database'] is defined and groups['database']|length >= 1 and (pg_host is not defined or pg_host|length < 1)"
+  tags: check_config_static_database_host
+
+- name: Ensure that when a database host is specified, that pg_port is defined
+  fail: msg="pg_port required when hosts in the database group exist."
+  when: "groups['database'] is defined and groups['database']|length >= 1 and (pg_port is not defined or pg_port|length < 1)"
+  tags: check_config_static_database_host
+
+- name: HA mode requires an external postgres database with pg_host defined
+  fail: msg="pg_host must be defined when multiple hosts exists"
+  when: "groups['tower'] is defined and groups['tower']|length > 1 and (pg_host is not defined or pg_host|length < 1)"
+  register: check_config_static_results
+  tags:
+    - check_config_static_ha_pg
+    - check_config_static_ha
+
+- name: HA mode requires an external postgres database with pg_port defined
+  fail: msg="pg_port must be defined when multiple hosts exists"
+  when: "groups['tower'] is defined and groups['tower']|length > 1 and (pg_port is not defined or pg_port|length < 1)"
+  register: check_config_static_results
+  tags:
+    - check_config_static_ha_pg
+    - check_config_static_ha

@@ -1,0 +1,39 @@
+---
+# Tasks to install required packages for Tower
+
+- include_vars: '{{ item }}'
+  with_first_found:
+    - files:
+        - '{{ ansible_distribution }}-{{ ansible_distribution_version }}.yml'           # Ubuntu-14.04
+        - '{{ ansible_distribution }}-{{ ansible_distribution_major_version }}.yml'     # Ubuntu-14
+        - '{{ ansible_distribution }}.yml'                                              # Ubuntu
+        - 'default.yml'
+      paths: '../vars'
+
+- name: Remove Django if installed via. apt.
+  apt:
+    name: python-django
+    state: absent
+
+- name: install apt repository keys
+  apt_key:
+    id: '{{ item.id|default(omit) }}'
+    keyserver: '{{ item.keyserver|default(omit) }}'
+    url: '{{ item.url|default(omit) }}'
+    data: '{{ item.data|default(omit) }}'
+  when: apt_keys is defined
+  with_items: "{{ apt_keys }}"
+
+- name: Install apt repositories
+  apt_repository:
+    repo: '{{ item }}'
+    mode: '0644'
+  when: apt_repos is defined
+  with_items: "{{ apt_repos }}"
+
+- name: Install playbook dependencies
+  apt:
+    name: '{{ item }}'
+    state: installed
+  with_items: "{{ ubuntu_dependencies }}"
+

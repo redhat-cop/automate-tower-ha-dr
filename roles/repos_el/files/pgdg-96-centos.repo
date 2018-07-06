@@ -1,0 +1,13 @@
+[pgdg96]
+name=PostgreSQL 9.6 $releasever - $basearch
+baseurl=http://download.postgresql.org/pub/repos/yum/9.6/redhat/rhel-$releasever-$basearch
+enabled=1
+gpgcheck=1
+gpgkey=file:///etc/pki/rpm-gpg/RPM-GPG-KEY-PGDG-96
+
+[pgdg96-source]
+name=PostgreSQL 9.6 $releasever - src
+baseurl=http://download.postgresql.org/pub/repos/yum/srpms/9.6/redhat/rhel-$releasever-$basearch
+enabled=0
+gpgcheck=0
+gpgkey=file:///etc/pki/rpm-gpg/RPM-GPG-KEY-PGDG-96

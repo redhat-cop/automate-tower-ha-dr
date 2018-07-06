@@ -1,0 +1,18 @@
+---
+apt_keys:
+    - url: 'https://www.postgresql.org/media/keys/ACCC4CF8.asc'
+    - id: '0x6B73A36E6026DFCA' # RabbitMQ, workaround for issue described here: https://github.com/ansible/ansible/issues/22647
+      keyserver: 'hkps.pool.sks-keyservers.net'
+    - url: 'https://releases.ansible.com/keys/442667A9.asc'
+    - url: 'http://nginx.org/keys/nginx_signing.key'
+
+apt_repos:
+    - 'ppa:ansible/ansible'
+    - 'ppa:ansible/bubblewrap'
+    - 'deb http://download.postgresql.org/pub/repos/apt/ trusty-pgdg main'
+    - 'deb http://www.rabbitmq.com/debian/ testing main'
+    - 'deb http://nginx.org/packages/ubuntu/ trusty nginx'
+
+ubuntu_dependencies:
+    - 'python-psycopg2'
+    - 'acl'

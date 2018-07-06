@@ -1,0 +1,6 @@
+---
+# Celery Settings
+# This takes the form of: max,min
+celery_autoscale: 50,4
+supervisor_awx_home: '/var/lib/awx'
+supervisor_exec_vars_only: false

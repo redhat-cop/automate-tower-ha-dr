@@ -1,0 +1,14 @@
+---
+yum_online_repo_files:
+  - 'ansible-el7.repo'
+  - 'epel-7.repo'
+  - 'pgdg-96-centos.repo'
+  - 'jlaska-rabbitmq.repo'
+
+yum_repo_keys:
+  - 'RPM-GPG-KEY-EPEL-7'
+  - 'RPM-GPG-KEY-PGDG-96'
+  - 'RPM-GPG-KEY-ansible-release'
+  - 'RPM-GPG-KEY-jlaska-rabbitmq'
+
+tower_bundle_file: tower_bundle_el7.j2

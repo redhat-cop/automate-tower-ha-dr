@@ -1,0 +1,5 @@
+---
+# Tasks for configuring Supervisord.
+- include: vars.yml
+- include: tasks.yml
+  when: "supervisor_exec_vars_only == false"

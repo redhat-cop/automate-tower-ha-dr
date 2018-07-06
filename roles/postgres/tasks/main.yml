@@ -1,0 +1,7 @@
+---
+- include: vars.yml
+- include: init.yml
+  when: "postgres_exec_vars_only == false"
+- include: conf.yml
+  when: "postgres_exec_vars_only == false"
+

@@ -1,0 +1,53 @@
+# Tasks to configure firewall rules
+
+- name: Determine if firewalld is running
+  command: firewall-cmd --state
+  register: firewalld_running
+  failed_when: false
+  ignore_errors: true
+  changed_when: false
+
+- name: Determine if firewalld is enabled
+  command: systemctl list-unit-files
+  register: systemctl_unit_files
+  changed_when: false
+
+- name: Determine if iptables is installed
+  command: iptables --version
+  register: iptables_installed
+  failed_when: false
+  ignore_errors: true
+  changed_when: false
+
+- name: Determine if iptables service is installed
+  stat:
+    path: /lib/systemd/system/iptables.service
+  register: iptables_service
+
+- name: Check to see if there is an iptables config file
+  stat:
+    path: /etc/sysconfig/iptables
+  register: iptables_exists
+  when: iptables_installed.rc == 0
+
+- name: Select firewalld
+  set_fact:
+    tower_firewall_type: firewalld
+  when: >
+    firewalld_running.rc == 0 or
+    systemctl_unit_files.stdout_lines | select('match','firewalld.service\s+enabled') | list | length == 1
+
+- name: Select iptables
+  set_fact:
+    tower_firewall_type: iptables
+  when:
+    - iptables_installed.rc == 0
+    - iptables_exists.stat.exists
+    - iptables_service.stat.exists
+
+- name: "Include {{ 'no' if tower_firewall_type == 'none' else tower_firewall_type }} tasks"
+  include: '{{ tower_firewall_type }}.yml'
+  when: >
+    firewalld_running.rc == 0 or
+    systemctl_unit_files.stdout_lines | select('match','firewalld.service\s+enabled') | list | length == 1 or
+    ( iptables_installed.rc == 0 and iptables_exists.stat.exists and iptables_service.stat.exists )

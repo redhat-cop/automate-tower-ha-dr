@@ -1,0 +1,15 @@
+---
+- name: Ensure that /etc/tower/ exists.
+  file:
+    group: root
+    mode: 0755
+    owner: root
+    path: /etc/tower/
+    state: directory
+
+- name: Copy configuration files into /etc/tower/.
+  shell: rsync -aq {{ backup_dir.rstrip("/") }}/restore/conf/ /etc/tower/
+  when: has_host_archive
+
+- name: Write SECRET_KEY into /etc/tower/
+  shell: rsync -aq {{ backup_dir.rstrip("/") }}/restore/SECRET_KEY /etc/tower/

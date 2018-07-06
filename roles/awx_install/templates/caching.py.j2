@@ -1,0 +1,8 @@
+# Ansible Tower memcached settings.
+
+CACHES = {
+    'default': {
+        'BACKEND': 'django.core.cache.backends.memcached.MemcachedCache',
+        'LOCATION': '{{ awx_install_memcached_bind }}',
+    },
+}

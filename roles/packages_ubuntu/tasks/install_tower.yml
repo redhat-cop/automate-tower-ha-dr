@@ -1,0 +1,69 @@
+---
+- name: Check for custom ui logo
+  stat:
+    path: '{{ awx_install_home }}/public/static/assets/custom_console_logo.png'
+  register: ui_logo
+
+- name: Check for custom ui settings
+  stat:
+    path: '{{ awx_install_home}}/public/static/local_settings.json'
+  register: ui_config
+
+- name: Move away custom ui logo
+  command: 'mv {{ awx_install_home }}/public/static/assets/custom_console_logo.png {{ awx_install_home }}'
+  when: ui_logo.stat.exists
+
+- name: Move away custom ui settings
+  command: 'mv {{ awx_install_home }}/public/static/local_settings.json {{ awx_install_home }}'
+  when: ui_config.stat.exists
+
+- name: Install ubuntu Tower apt repository.
+  template:
+    src: apt_repo.j2
+    dest: /etc/apt/sources.list.d/ansible_tower.list
+  register: apt_repo
+
+- name: A secret key may already exist; test if it does.
+  stat:
+    path: /etc/tower/SECRET_KEY
+  register: secret_key
+
+- name: If a secret key already exists, read it into memory.
+  slurp:
+    src: /etc/tower/SECRET_KEY
+  register: sk_content
+  no_log: True
+  when: secret_key.stat.exists
+
+- name: Install Tower package with the apt module.
+  apt:
+    name: '{{ tower_package_deb }}'
+    update_cache: yes
+    state: present
+    force: '{{ not gpgcheck|bool }}'
+
+- name: Upgrade Ansible
+  apt:
+    name: ansible
+    update_cache: yes
+    state: present
+  when: upgrade_ansible_with_tower
+
+- name: Restore the secret key.
+  copy:
+    content: "{{ sk_content.content.decode('base64') }}"
+    dest: /etc/tower/SECRET_KEY
+    force: yes
+  when: secret_key.stat.exists
+  no_log: True
+
+# The 'path' parameter below works around an open ansible issue (https://github.com/ansible/ansible/issues/10190)
+- name: Remove Tower apt repository configuration.
+  file:
+    path: '{{ apt_repo.path|default(apt_repo.dest) }}'
+    state: absent
+  when: apt_repo is defined
+
+- name: Update apt cache
+  apt:
+    update_cache: yes

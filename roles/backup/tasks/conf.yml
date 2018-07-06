@@ -1,0 +1,15 @@
+---
+- name: Create a directory for configuration files.
+  file:
+    path: '{{ backup_dir.rstrip("/") }}/{{ now }}/conf/'
+    group: root
+    mode: 0755
+    owner: root
+    state: directory
+
+- name: Copy configuration files from conf.d.
+  shell: rsync --exclude=SECRET_KEY --exclude=conf.d/postgres.py --exclude=conf.d/celeryd.py --exclude=conf.d/caching.py --exclude=conf.d/rabbitmq.py -auq /etc/tower/ {{ backup_dir.rstrip("/") }}/{{ now }}/conf/
+
+- name: Copy common files from configuration
+  shell: rsync  -auq /etc/tower/SECRET_KEY {{ backup_dir.rstrip("/") }}/common/
+  when: inventory_hostname == groups['tower'][0]

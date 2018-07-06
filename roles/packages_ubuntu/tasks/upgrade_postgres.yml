@@ -1,0 +1,66 @@
+- name: Stop postgres
+  service:
+    name: postgresql
+    state: stopped
+
+- name: Symlink pg config
+  file:
+    src: "{{ item.src }}"
+    dest: "{{ item.dest }}"
+    state: link
+  with_items:
+    - src: /etc/postgresql/9.4/main/postgresql.conf
+      dest: /var/lib/postgresql/9.4/main/postgresql.conf
+    - src: /etc/postgresql/9.4/main/pg_hba.conf
+      dest: /var/lib/postgresql/9.4/main/pg_hba.conf
+    - src: /etc/postgresql/9.6/main/postgresql.conf
+      dest: /var/lib/postgresql/9.6/main/postgresql.conf
+    - src: /etc/postgresql/9.6/main/pg_hba.conf
+      dest: /var/lib/postgresql/9.6/main/pg_hba.conf
+
+- name: Ensure conf.d directories exists
+  file:
+    path: "{{ item }}"
+    state: directory
+    owner: postgres
+    group: postgres
+  with_items:
+    - /var/lib/postgresql/9.4/main/conf.d
+    - /var/lib/postgresql/9.6/main/conf.d
+
+- block:
+  - name: pg_upgrade
+    command: |
+      /usr/lib/postgresql/9.6/bin/pg_upgrade \
+        -d /var/lib/postgresql/9.4/main \
+        -D /var/lib/postgresql/9.6/main \
+        -b /usr/lib/postgresql/9.4/bin/ \
+        -B /usr/lib/postgresql/9.6/bin/
+    become: True
+    become_user: postgres
+    args:
+      chdir: /var/lib/postgresql
+    no_log: True
+  rescue:
+  - service:
+      name: postgresql
+      state: started
+      enabled: yes
+  - fail:
+      msg: "Postgres upgrade to 9.6 failed."
+    no_log: False
+
+- name: Uninstall Postgresql 9.4
+  apt:
+    name: "{{ item }}"
+    state: absent
+  with_items:
+    - postgresql-9.4
+    - postgresql-client-9.4
+    - postgresql-contrib-9.4
+
+- name: Make sure Postgres starts on the expected port
+  lineinfile:
+    name: /etc/postgresql/9.6/main/postgresql.conf
+    regexp: '^port\s='
+    line: "port = {{ pg_port }}"

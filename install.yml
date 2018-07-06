@@ -1,0 +1,223 @@
+---
+# This playbook deploys the Ansible Tower application (database, web and
+# worker daemons) to a single server.
+
+- hosts: tower:database:instance_group_*
+  gather_facts: false
+  roles:
+    - role: check_config_static
+      check_config_static_required_vars:
+        - tower_package_name
+        - tower_package_version
+        - tower_package_release
+    - role: config_dynamic
+
+- name: "Group nodes by OS distribution"
+  hosts: all
+  gather_facts: true
+  tasks:
+    - name: group hosts by distribution
+      group_by: key="{{ ansible_distribution }}-{{ ansible_distribution_version }}"
+      changed_when: false
+
+- name: "Group supported distributions"
+  hosts: RedHat-7*:CentOS-7*:Ubuntu-14.04:Ubuntu-16.04:OracleLinux-7*
+  gather_facts: false
+  tasks:
+    - name: group hosts for supported distributions
+      group_by: key="supported"
+      changed_when: false
+
+- name: "Ensure all node OS distributions are supported"
+  hosts: "!supported"
+  gather_facts: false
+  tasks:
+    - name: fail for unsupported distribution
+      fail: msg="{{ ansible_distribution }} {{ ansible_distribution_version }}
+                 is not a supported OS for a Tower installation.  Supported
+                 OSes include Red Hat Enterprise Linux 7, CentOS 7, or
+                 Ubuntu 14.04/16.04."
+
+- name: "Ensure all isolated node OS distributions are supported"
+  hosts: Ubuntu-*:&isolated_group_*
+  gather_facts: false
+  tasks:
+    - name: fail for unsupported distribution
+      fail: msg="{{ ansible_distribution }} {{ ansible_distribution_version }}
+                 is not a supported OS for a Tower isolated node. Supported
+                 OSes include Red Hat Enterprise Linux 7 and CentOS 7."
+
+- name: "Check for deprecated platforms"
+  hosts: Ubuntu-14.04
+  gather_facts: false
+  tasks:
+    - name: warn on deprecated platforms
+      debug: msg="Support for {{ ansible_distribution }} {{ ansible_distribution_version }}
+                  as a Tower platform is deprecated and will be removed in a future release."
+
+- name: "Define role discovered variables, usable throughout the playbook"
+  hosts: tower:database:instance_group_*
+  gather_facts: false
+  roles:
+    - role: postgres
+      postgres_exec_vars_only: true
+    - role: nginx
+      nginx_exec_vars_only: true
+    - role: supervisor
+      supervisor_exec_vars_only: true
+    - role: awx_install
+      awx_install_exec_vars_only: true
+
+- name: "Verify consistency of inventory contents"
+  hosts: tower:instance_group_*:isolated_group_*
+  gather_facts: false
+  tasks:
+
+    - name: Check that no instance groups are named tower
+      fail: msg="Cannot name instance group tower"
+      with_items: "{{ groups }}"
+      when:
+        - item != "tower"
+        - item.replace('isolated_group_', '').replace('instance_group_', '') == "tower"
+      run_once: True
+
+    - name: Check that controller uses queue name and not group name
+      fail: msg="Incorrectly referenced controller.
+        Please remove the leading `instance_group_` from `controller` variable `{{ controller }}`."
+      when:
+        - controller is defined
+        - controller.startswith('instance_group_')
+
+    - name: Check that group names do not conflict with instance names
+      fail: msg="Hostname '{{ ansible_host }}' conflicts with the name of a group"
+      when: ('instance_group_' + ansible_host) in groups or ('isolated_group_' + ansible_host) in groups
+
+- name: "Sanity check and prep Tower node(s)"
+  hosts: tower:instance_group_*
+  gather_facts: false
+  roles:
+    - role: preflight
+      tags: preflight
+
+    - role: migrations
+      tags: migrations
+      migrations_database: "{{ config_dynamic_database }}"
+      migrations_pg_database: "{{ pg_database }}"
+      migrations_tower_version: "{{ tower_version }}"
+      migrations_httpd_init_name: "{{ httpd_init_name }}"
+
+- name: "Prep installation repos"
+  hosts: tower:instance_group_*:database:isolated_group_*
+  gather_facts: false
+  roles:
+    - role: repos_el
+      tags: packages
+      when: ansible_os_family == "RedHat"
+
+- name: "Install postgres database node"
+  hosts: database
+  gather_facts: false
+  roles:
+    - role: packages_el
+      packages_el_install_tower: false
+      packages_el_install_postgres: true
+      when: ansible_os_family == "RedHat"
+
+    - role: packages_ubuntu
+      packages_ubuntu_install_tower: false
+      packages_ubuntu_install_postgres: true
+      when: ansible_os_family == "Debian"
+
+    - role: postgres
+      tags: postgresql_database
+      postgres_allowed_ipv4: "0.0.0.0/0"
+      postgres_allowed_ipv6: "::1/128"
+      postgres_username: "{{ pg_username }}"
+      postgres_password: "{{ pg_password }}"
+      postgres_database: "{{ pg_database }}"
+      max_postgres_connections: 1024
+      postgres_shared_memory_size: "{{ (ansible_memtotal_mb*0.3)|int }}"
+      postgres_work_mem: "{{ (ansible_memtotal_mb*0.03)|int }}"
+      postgres_maintenance_work_mem: "{{ (ansible_memtotal_mb*0.04)|int }}"
+
+    - role: firewall
+      tags: firewall
+      firewalld_http_port: "{{ nginx_http_port }}"
+      firewalld_https_port: "{{ nginx_https_port }}"
+      when: ansible_os_family == 'RedHat'
+
+- name: "Install Tower node(s)"
+  hosts: tower:instance_group_*
+  gather_facts: false
+  roles:
+    - role: packages_el
+      tags: packages
+      packages_el_tower_package_name: "{{ tower_package_name }}"
+      packages_el_tower_package_version: "{{ tower_package_version }}"
+      when: ansible_os_family == 'RedHat'
+
+    - role: packages_ubuntu
+      tags: packages
+      packages_ubuntu_tower_package_name: "{{ tower_package_name }}"
+      packages_ubuntu_tower_package_version: "{{ tower_package_version }}"
+      when: ansible_os_family == 'Debian'
+
+    - role: postgres
+      tags: postgresql_primary
+      postgres_username: "{{ pg_username }}"
+      postgres_password: "{{ pg_password }}"
+      postgres_database: "{{ pg_database }}"
+      max_postgres_connections: 200
+      postgres_shared_memory_size: "{{ (ansible_memtotal_mb*0.1)|int }}"
+      postgres_work_mem: "{{ (ansible_memtotal_mb*0.01)|int }}"
+      postgres_maintenance_work_mem: "{{ (ansible_memtotal_mb*0.04)|int }}"
+      when: "config_dynamic_database == 'internal'"
+
+    - role: firewall
+      tags: firewall
+      firewalld_http_port: "{{ nginx_http_port }}"
+      firewalld_https_port: "{{ nginx_https_port }}"
+      firewalld_rabbitmq_enable_manager: "{{ rabbitmq_enable_manager }}"
+
+      when: ansible_os_family == 'RedHat'
+
+    - role: rabbitmq
+      tags: rabbitmq
+      rabbitmq_env_host: "{{ rabbitmq_host|default(ansible_host) }}"
+
+    - role: memcached
+      tags: memcached
+
+    - role: awx_install
+      tags: awx
+      awx_install_admin_password: "{{ admin_password }}"
+      awx_install_database: "{{ config_dynamic_database }}"
+      awx_install_pg_host: "{{ pg_host }}"
+      awx_install_pg_port: "{{ pg_port }}"
+      awx_install_pg_username: "{{ pg_username }}"
+      awx_install_pg_password: "{{ pg_password }}"
+      awx_install_pg_database: "{{ pg_database }}"
+      awx_install_pg_init_name: "{{ postgres_init_name }}"
+      awx_install_supervisor_init_name: "{{ sup_init_name }}"
+      awx_install_supervisor_socket_location: "{{ sup_socket_location }}"
+      rabbitmq_awx_install_host: "{{ rabbitmq_host|default(ansible_host) }}"
+
+    - role: supervisor
+      tags: supervisor
+      local_queue: "{{ rabbitmq_host|default(ansible_host) }}"
+      rabbitmq_supervisord_host: "{{ rabbitmq_host|default(ansible_host) }}"
+
+    - role: nginx
+      tags: nginx
+
+    - role: misc
+      tags: misc
+      cluster_host_identifier: "{{ rabbitmq_host|default(ansible_host) }}"
+
+- name: "Install Tower isolated node(s)"
+  hosts: isolated_group_*
+  become: yes
+  gather_facts: false
+  roles:
+    - role: isolated
+      isolated_package_version: "{{ tower_package_version }}"

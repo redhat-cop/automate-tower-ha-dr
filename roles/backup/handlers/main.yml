@@ -1,0 +1,25 @@
+---
+- name: Remove the backup directory.
+  file:
+    path: '{{ backup_dir.rstrip("/") }}/{{ now }}/'
+    state: absent
+
+- name: Remove common directory.
+  file:
+    path: '{{ backup_dir.rstrip("/") }}/common/'
+    state: absent
+
+- name: Remove the backup tarball.
+  file:
+    path: '{{ backup_dir.rstrip("/") }}/{{ inventory_hostname }}.tar.gz'
+    state: absent
+
+- name: Remove the common tarball.
+  file:
+    path: '{{ backup_dir.rstrip("/") }}/common.tar.gz'
+    state: absent
+
+- name: Remove backup dest stage directory.
+  file:
+    path: '{{ backup_dest.rstrip("/") }}/{{ now }}'
+    state: absent

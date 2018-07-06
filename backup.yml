@@ -1,0 +1,7 @@
+---
+- hosts: tower:instance_group_*
+  gather_facts: yes
+  roles:
+    - role: check_config_static
+    - role: config_dynamic
+    - role: backup

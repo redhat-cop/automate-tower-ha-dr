@@ -1,0 +1,22 @@
+###############################################################################
+# RABBITMQ SETTINGS
+###############################################################################
+
+CLUSTER_HOST_ID = '{{ rabbitmq_awx_install_host }}'
+CELERY_ROUTES['awx.main.tasks.cluster_node_heartbeat'] = {'queue': CLUSTER_HOST_ID, 'routing_key': CLUSTER_HOST_ID}
+CELERY_ROUTES['awx.main.tasks.purge_old_stdout_files'] = {'queue': CLUSTER_HOST_ID, 'routing_key': CLUSTER_HOST_ID}
+{% if rabbitmq_controlling_queues %}
+CELERY_ROUTES['awx.main.tasks.awx_isolated_heartbeat'] = {'queue': CLUSTER_HOST_ID, 'routing_key': CLUSTER_HOST_ID}
+{% endif %}
+
+{% for queue in all_tower_queues %}
+CELERY_QUEUES += (Queue("{{ queue }}", Exchange("{{ queue }}"), routing_key="{{ queue }}"),)
+{% endfor %}
+
+{% if rabbitmq_controlling_queues %}
+CELERYBEAT_SCHEDULE['isolated_heartbeat'] = {
+    'task': 'awx.main.tasks.awx_isolated_heartbeat',
+    'schedule': timedelta(seconds=AWX_ISOLATED_PERIODIC_CHECK),
+    'options': {'expires': AWX_ISOLATED_PERIODIC_CHECK*2,}
+}
+{% endif %}

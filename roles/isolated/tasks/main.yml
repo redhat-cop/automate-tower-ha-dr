@@ -1,0 +1,73 @@
+- name: Assign controller instance for the install of each isolated instance
+  set_fact:
+    _controller: "{{ groups['tower'][0] if hostvars[inventory_hostname]['controller'] == 'tower' else groups['instance_group_' + hostvars[inventory_hostname]['controller']][0] }}"
+
+- name: Install the Isolated Tower RPM.
+  yum:
+    name: "{{ isolated_package_rpm }}"
+    enablerepo: "{{ tower_enable_repo }}"
+    disable_gpg_check: "{{ not gpgcheck | bool }}"
+    state: latest
+
+- name: Upgrade Ansible
+  yum:
+    name: ansible
+    state: latest
+  when: upgrade_ansible_with_tower
+
+- name: Configure the Tower system user's home directory.
+  file: path={{awx_install_home}} state=directory owner={{aw_user}} group={{aw_group}} mode=0755
+
+- name: Register associated isolated instances.
+  shell: awx-manage register_instance --hostname="{{ inventory_hostname }}"
+  args:
+    executable: /bin/bash
+  register: register_instance
+  changed_when: "'changed: True' in register_instance.stdout"
+  become_user: '{{ aw_user }}'
+  become: yes
+  delegate_to: "{{ _controller }}"
+
+- name: Register associated isolated instance group.
+  shell: awx-manage register_queue --queuename="{{ item|regex_replace('^isolated_group_','') }}" --hostnames="{{ inventory_hostname }}" --controller="{{ controller }}"
+  args:
+    executable: /bin/bash
+  become_user: '{{ aw_user }}'
+  become: True
+  register: register_queue
+  changed_when: "'Added' in register_queue.stdout"
+  delegate_to: "{{ _controller }}"
+  with_items: "{{ group_names }}"
+  when: item | match("^isolated_group_.+$")
+
+- name: Set the isolated key generation settings based on the installer flag
+  shell: echo 'settings.AWX_ISOLATED_KEY_GENERATION = {{ "True" if isolated_key_generation|bool else "False" }}' | awx-manage shell_plus
+  delegate_to: "{{ _controller }}"
+  run_once: True
+
+- name: Generate an initial SSH Key for all isolated nodes (run_once=True)
+  shell: awx-manage generate_isolated_key
+  args:
+    executable: /bin/bash
+  become_user: '{{ aw_user }}'
+  become: True
+  delegate_to: "{{ _controller }}"
+  run_once: True
+  when: isolated_key_generation|bool
+
+- name: Look up the generated public SSH key
+  shell: awx-manage generate_isolated_key
+  args:
+    executable: /bin/bash
+  become_user: '{{ aw_user }}'
+  become: True
+  register: isolated_key
+  delegate_to: "{{ _controller }}"
+  when: isolated_key_generation|bool
+
+- name: Set authorized key
+  authorized_key:
+    user: '{{ aw_user }}'
+    state: present
+    key: "{{ isolated_key.stdout }}"
+  when: isolated_key_generation|bool

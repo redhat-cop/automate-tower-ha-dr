@@ -1,0 +1,34 @@
+---
+- name: Determine the timestamp for the backup.
+  set_fact:
+    now: '{{ lookup("pipe", "date +%F-%T") }}'
+
+- name: Create a directory for a backup to live.
+  file:
+    path: '{{ backup_dir.rstrip("/") }}/{{ now }}/'
+    mode: 0775
+    owner: root
+    state: directory
+  notify: Remove the backup directory.
+
+- name: Create a directory for non-instance specific backups
+  file:
+    path: '{{ backup_dir.rstrip("/") }}/common/'
+    mode: 0775
+    owner: root
+    state: directory
+  when: inventory_hostname == groups['tower'][0]
+  notify: Remove common directory.
+
+- name: Get tower database settings
+  shell: "awx-manage print_settings | grep '^DATABASES'"
+  register: results
+  changed_when: False
+  no_log: True
+  when: inventory_hostname == groups['tower'][0]
+
+- name: Ingest tower database settings
+  set_fact:
+    tower_db_settings: "{{ results.stdout | regex_replace('DATABASES\\s+= ', '') }}"
+  no_log: True
+  when: inventory_hostname == groups['tower'][0]

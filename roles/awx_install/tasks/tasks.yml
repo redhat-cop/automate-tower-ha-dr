@@ -1,0 +1,353 @@
+---
+# Tasks for installing and configuring the Ansible Tower application.
+
+- name: include task specific variables
+  include_vars: '{{ ansible_os_family }}.yml'
+
+- name: Configure the Tower settings directory.
+  file: path=/etc/tower state=directory owner=root group={{aw_group}} mode=0755
+
+- name: Configure the Tower system user's home directory.
+  file: path={{awx_install_home}} state=directory owner={{aw_user}} group={{aw_group}} mode=0755
+
+- name: Configure the Tower system user's .ssh directory.
+  file: path={{awx_install_home}}/.ssh state=directory owner={{aw_user}} group={{aw_group}} mode=0700
+
+- name: Configure the Tower projects directory.
+  file: path={{awx_install_home}}/projects state=directory owner={{aw_user}} group={{aw_group}} mode=0750
+
+- name: Configure the Tower job output directory.
+  file: path={{awx_install_home}}/job_status state=directory owner={{aw_user}} group={{aw_group}} mode=0750
+
+- name: Configure the Tower static directory.
+  file: path={{awx_install_home}}/public/static state=directory owner=root group={{aw_group}} mode=0755 recurse=yes
+
+- name: Add Towers `conf.d` directory.
+  file: path=/etc/tower/conf.d state=directory owner=root group={{aw_group}} mode=0750
+
+- name: configure tower log directory
+  file: path=/var/log/tower state=directory owner={{aw_user}} group={{aw_group}} mode=0755
+
+# When running with an external database, we need to remove 'postgresql' from
+# the list of tower managed services.
+- name: update ansible-tower service configuration
+  template:
+    src: ansible-tower.sysconfig.j2
+    dest: '{{tower_sysconfig_path}}'
+    owner: root
+    group: root
+    mode: '0644'
+
+- name: Fetch the secret key from the primary node.
+  slurp:
+    src: /etc/tower/SECRET_KEY
+  when: inventory_hostname == groups['tower'][0]
+  register: secret_key
+  no_log: True
+
+- name: Fail play when grabbing SECRET_KEY fails
+  fail:
+    msg: "Failed to read /etc/tower/SECRET_KEY from primary tower node"
+  when: "hostvars[groups['tower'][0]]['secret_key'].content is not defined"
+
+- name: Place the secret key on secondary nodes.
+  copy:
+    content: "{{ hostvars[groups['tower'][0]]['secret_key']['content'].decode('base64') }}"
+    dest: /etc/tower/SECRET_KEY
+    force: yes
+    mode: '0640'
+    owner: root
+    group: '{{ aw_group }}'
+  when: inventory_hostname != groups['tower'][0]
+  no_log: True
+
+- name: Get tower db settings
+  shell: "awx-manage print_settings | grep '^DATABASES'"
+  become_user: '{{ aw_user }}'
+  become: True
+  register: results
+  changed_when: False
+  failed_when: false
+  no_log: True
+
+- name: Ingest database settings
+  set_fact:
+    tower_db_settings: "{{ results.stdout | regex_replace('DATABASES\\s+= ', '') }}"
+  no_log: True
+  when: results.rc == 0
+
+- name: Set database vars
+  set_fact:
+    awx_install_pg_database__: "{{ awx_install_pg_database }}"
+    awx_install_pg_username__: "{{ awx_install_pg_username }}"
+    awx_install_pg_password__: "{{ awx_install_pg_password }}"
+    awx_install_pg_host__: "{{ awx_install_pg_host }}"
+    awx_install_pg_port__: "{{ awx_install_pg_port }}"
+  no_log: True
+  when: results.rc != 0
+
+- name: Set database vars
+  set_fact:
+    awx_install_pg_database__: "{{ awx_install_pg_database or tower_db_settings.default.NAME }}"
+    awx_install_pg_username__: "{{ awx_install_pg_username or tower_db_settings.default.USER }}"
+    awx_install_pg_password__: "{{ awx_install_pg_password or tower_db_settings.default.PASSWORD }}"
+    awx_install_pg_host__: "{{ awx_install_pg_host or tower_db_settings.default.HOST }}"
+    awx_install_pg_port__: "{{ awx_install_pg_port or tower_db_settings.default.PORT }}"
+  no_log: True
+  when: results.rc == 0
+
+- name: Configure Towers database settings.
+  template:
+    dest: /etc/tower/conf.d/postgres.py
+    force: yes
+    src: postgres.py.j2
+    mode: '0640'
+    owner: root
+    group: '{{ aw_group }}'
+  register: result
+  notify:
+    - restart nginx
+    - restart supervisor
+  tags: awx_install_db_settings
+
+- name: Configure Towers celeryd settings.
+  template:
+    dest: /etc/tower/conf.d/celeryd.py
+    force: yes
+    src: celeryd.py.j2
+    mode: '0640'
+    owner: root
+    group: '{{ aw_group }}'
+  when: "rabbitmq_password is defined and rabbitmq_password != ''"
+  notify:
+    - restart nginx
+    - restart supervisor
+
+- name: Initialize instance groups for host
+  set_fact:
+    awx_instance_groups: []
+
+- name: Determine instance groups for host
+  set_fact:
+    awx_instance_groups: "{{ awx_instance_groups }} + [ '{{ item|regex_replace('^instance_group_','') }}' ]"
+  with_items: "{{group_names}}"
+  when: item | match("(^tower|^instance_group_.+)$")
+
+- name: Initialize controlling queues
+  set_fact:
+    rabbitmq_controlling_queues: []
+
+- name: Determine isolated queues that this host controls
+  set_fact:
+    rabbitmq_controlling_queues: "{{ rabbitmq_controlling_queues }} + [ '{{ item|regex_replace('^isolated_group_','') }}' ]"
+  with_items: "{{ groups }}"
+  when:
+    - item | match("(^isolated_group_.+)$")
+    - "'instance_group_' + hostvars[groups[item][0]]['controller'] in group_names or hostvars[groups[item][0]]['controller'] in group_names"
+
+- name: Initial routeable groups for all hosts
+  set_fact:
+    all_tower_queues: []
+
+- name: Determine all routeable groups
+  set_fact:
+    all_tower_queues: "{{ all_tower_queues }} + [ '{{ item|regex_replace('^instance_group_','') }}' ]"
+  with_items: "{{groups.keys()}}"
+  when: item | match("^instance_group_.+$")
+
+- name: Install Tower rabbitmq settings
+  template:
+    dest: /etc/tower/conf.d/rabbitmq.py
+    force: yes
+    src: rabbitmq.py.j2
+    mode: '0640'
+    owner: root
+    group: '{{ aw_group }}'
+  notify:
+    - restart nginx
+    - restart supervisor
+
+- name: Install Tower cache settings
+  template:
+    dest: /etc/tower/conf.d/caching.py
+    force: yes
+    src: caching.py.j2
+    mode: '0640'
+    owner: root
+    group: '{{ aw_group }}'
+  notify:
+    - restart nginx
+    - restart supervisor
+
+- name: Install Tower's settings file if it doesn't already exist.
+  template:
+    dest: /etc/tower/settings.py
+    force: no
+    src: settings.py.j2
+    mode: '0640'
+    owner: root
+    group: '{{ aw_group }}'
+  notify:
+    - restart nginx
+    - restart supervisor
+
+- name: Stop supervisor
+  service:
+    name: '{{ awx_install_supervisor_init_name }}'
+    state: stopped
+
+- name: Wait for supervisor to stop.
+  stat:
+    path: '{{ awx_install_supervisor_socket_location }}'
+  register: result
+  until: not result.stat.exists
+  retries: 10
+  delay: 2
+
+- name: Migrate the Tower database schema (may take awhile when upgrading).
+  command: awx-manage migrate --noinput --fake-initial
+  become_user: '{{ aw_user }}'
+  become: True
+  register: tower_migrate
+  changed_when: "tower_migrate.stdout is defined and 'No migrations to apply' not in tower_migrate.stdout"
+  when: inventory_hostname == groups['tower'][0]
+
+- name: Checking for RBAC migration log
+  stat: path=/tmp/tower_rbac_migrations.log
+  register: rbac_log
+
+- name: Moving RBAC migration log
+  command: mv /tmp/tower_rbac_migrations.log /var/log/tower
+  when: rbac_log.stat.exists
+
+- name: Check for custom ui logo
+  stat:
+    path: '{{ awx_install_home }}/custom_console_logo.png'
+  register: ui_logo
+
+- name: Check for custom ui settings
+  stat:
+    path: '{{ awx_install_home}}/local_settings.json'
+  register: ui_config
+
+- name: Move back custom ui logo
+  command: 'mv {{ awx_install_home }}/custom_console_logo.png {{ awx_install_home }}/public/static/assets/'
+  when: ui_logo.stat.exists
+
+- name: Move back custom ui settings
+  command: 'mv {{ awx_install_home }}/local_settings.json {{ awx_install_home }}/public/static/'
+  when: ui_config.stat.exists
+
+- name: Set custom ui logo permissions
+  file:
+    path: '{{ awx_install_home }}/public/static/assets/custom_console_logo.png'
+    owner: root
+    group: root
+  when: ui_logo.stat.exists
+
+- name: Set custom ui settings permissions
+  file:
+    path: '{{ awx_install_home }}/public/static/local_settings.json'
+    owner: root
+    group: root
+  when: ui_config.stat.exists
+
+- name: get the tower version
+  shell: awx-manage version
+  become_user: '{{ aw_user }}'
+  become: True
+  register: tower_version
+
+- name: store the tower version
+  copy:
+    dest: '{{ awx_install_home }}/.tower_version'
+    owner: root
+    group: root
+    mode: 0644
+    content: '{{ tower_version.stdout }}'
+  become_user: root
+  become: True
+
+- name: Migrate settings from files to database.
+  command: awx-manage migrate_to_database_settings --skip-errors
+  become_user: root
+  become: True
+  register: tower_migrate_settings
+  changed_when: "'+++ ' in tower_migrate_settings.stdout"
+  when: inventory_hostname == groups['tower'][0]
+
+- name: Comment settings files on all instances.
+  command: awx-manage migrate_to_database_settings --skip-errors --comment-only
+  become_user: root
+  become: True
+  register: tower_migrate_settings
+  changed_when: "'+++ ' in tower_migrate_settings.stdout"
+  when: inventory_hostname != groups['tower'][0]
+
+- name: Fixup tower log directory permissions post-migration
+  file:
+    path: '/var/log/tower'
+    state: 'directory'
+    owner: '{{aw_user}}'
+    group: '{{aw_group}}'
+    recurse: true
+    mode: 'u=rwX,g=rX,o=r'
+
+- name: Get configuration files to set permissions on
+  shell: ls /etc/tower/conf.d/*.py
+  register: configuration_files
+  changed_when: false
+
+- name: Clean up any poorly-permissioned Tower configuration files on upgrade
+  file:
+    path: "{{ item }}"
+    state: file
+    owner: root
+    group: awx
+    mode: 0640
+  become_user: root
+  become: True
+  with_items: "{{ configuration_files.stdout_lines }} + ['/etc/tower/settings.py']"
+
+- name: Check for Tower Super users
+  shell: echo "from django.contrib.auth.models import User; nsu = User.objects.filter(is_superuser=True).count(); exit(0 if nsu > 0 else 1)" | awx-manage shell
+  register: super_check
+  become_user: '{{ aw_user }}'
+  become: True
+  ignore_errors: yes
+  changed_when: super_check.rc > 0
+  when: inventory_hostname == groups['tower'][0]
+
+- name: create django super user if it does not exist
+  shell: echo "from django.contrib.auth.models import User; User.objects.create_superuser('{{ admin_username }}', '{{ admin_email }}', '{{ awx_install_admin_password }}')" | awx-manage shell
+  become_user: '{{ aw_user }}'
+  become: True
+  no_log: True
+  when: inventory_hostname == groups['tower'][0] and super_check.rc > 0
+
+- name: update django super user password
+  shell: awx-manage update_password --username='{{ admin_username }}' --password='{{ awx_install_admin_password }}'
+  become_user: '{{ aw_user }}'
+  become: True
+  no_log: True
+  register: result
+  changed_when: "'Password updated' in result.stdout"
+  when: awx_install_admin_password != '' and inventory_hostname == groups['tower'][0]
+
+- name: Collect static files for Tower.
+  command: awx-manage collectstatic --noinput --clear -v0
+  become_user: root
+  become: True
+  when: tower_package_name == "ansible-tower"
+  # When using --clear, this command will *always* result in a change
+  # register: awx_collectstatic
+  # changed_when: "not awx_collectstatic.stdout_lines[-1].startswith('0 static files')"
+
+- name: Fixup tower log directory permissions post-migration
+  file:
+    path: '/var/log/tower'
+    state: 'directory'
+    owner: '{{aw_user}}'
+    group: '{{aw_group}}'
+    recurse: true
+    mode: 'u=rwX,g=rX,o=r'

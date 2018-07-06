@@ -1,0 +1,4 @@
+#!/bin/sh
+mkdir -p /var/run/memcached
+chmod 0750 /var/run/memcached
+chown {{ memcached_user }}:{{ memcached_user }} /var/run/memcached

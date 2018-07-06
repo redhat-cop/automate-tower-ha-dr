@@ -1,0 +1,65 @@
+---
+
+- include: vars.yml
+
+- block:
+    - name: Create memcached socket directory on boot (14.04 only)
+      template:
+        src: awx-memcached-init.j2
+        dest: /etc/init.d/awx-memcached
+        force: yes
+        mode: 'u+x'
+        owner: root
+        group: 'root'
+
+    - shell: update-rc.d awx-memcached defaults
+  when: ansible_distribution_version == '14.04'
+
+- block:
+    - name: ensure /var/run/memcached exists
+      file: path=/var/run/memcached state=directory mode=0750 owner='{{ memcached_user }}' group='{{ memcached_user }}'
+
+    - name: Create tmpfiles.d entry for memcached socket directory
+      template:
+        src: memcached.conf.j2
+        dest: /etc/tmpfiles.d/memcached.conf
+        force: yes
+        mode: '0640'
+        owner: root
+        group: 'root'
+      when: ansible_distribution_version != '14.04'
+
+    - name: bind memcached to a unix domain socket (non-Debian)
+      lineinfile:
+        dest: /etc/sysconfig/memcached
+        regexp: '^OPTIONS='
+        line: 'OPTIONS="-s /var/run/memcached/memcached.sock -a 0660"'
+      when:  ansible_os_family != 'Debian'
+      register: memcached_conf
+
+    - name: bind memcached to a unix domain socket (Debian)
+      lineinfile:
+        dest: /etc/memcached.conf
+        regexp: '^{{ item.prefix }}'
+        line: '{{ item.prefix }} {{ item.value }}'
+      with_items:
+        - { prefix: '-s', value: '/var/run/memcached/memcached.sock' }
+        - { prefix: '-a', value: '0660' }
+      when:  ansible_os_family == 'Debian'
+      register: memcached_conf_debian
+
+    - name: restart memcached when bind settings changed
+      service:
+        name: memcached
+        state: restarted
+      when: memcached_conf|changed or memcached_conf_debian|changed
+
+    - name: add awx to the memcached group so it can access the socket
+      user: name=awx groups='{{ memcached_user }}' append=yes
+  when: awx_install_memcached_bind.startswith('unix:')
+
+- name: Start Memcached and enable it at startup
+  service:
+    name: memcached
+    state: started
+    enabled: yes

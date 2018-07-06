@@ -1,0 +1,23 @@
+---
+- name: Check to see if Postgres is installed
+  command: psql -tAc "select version()"
+  become: True
+  become_user: postgres
+  changed_when: False
+  ignore_errors: True
+  register: psql
+
+- name: Set upgrade flag if Postgres is installed and not at version 9.6
+  set_fact:
+    upgrade_postgres: "{{ psql.rc == 0 and '9.6' not in psql.stdout }}"
+  when: not psql | failed
+
+- name: Install postgres
+  yum:
+    name: "{{ item }}"
+    enablerepo: "{{ tower_enable_repo|default(omit) }}"
+    state: installed
+  with_items: "{{ postgresql_packages }}"
+
+- include: upgrade_postgres.yml
+  when: upgrade_postgres | default(false) | bool

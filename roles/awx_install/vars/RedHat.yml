@@ -1,0 +1,6 @@
+---
+
+# Specify ansible-tower service configuration file
+tower_sysconfig_path: '/etc/sysconfig/ansible-tower'
+
+service_path: /sbin/service

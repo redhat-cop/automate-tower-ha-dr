@@ -1,0 +1,43 @@
+- name: Enable base Tower firewall ports
+  lineinfile:
+    dest: /etc/sysconfig/iptables
+    state: present
+    regexp: "^.*INPUT.*tcp.*{{item}}.*ACCEPT"
+    insertafter: "^:OUTPUT "
+    line: "-A INPUT -p tcp --dport {{item}} -j ACCEPT"
+  when: inventory_hostname in groups['tower']
+  with_items: "{{ tower_firewall_ports }}"
+  notify: restart iptables
+
+- name: Enable HA Tower firewall ports
+  lineinfile:
+    dest: /etc/sysconfig/iptables
+    state: present
+    regexp: "^.*INPUT.*tcp.*{{item}}.*ACCEPT"
+    insertafter: "^:OUTPUT "
+    line: "-A INPUT -p tcp --dport {{item}} -j ACCEPT"
+  when: inventory_hostname in groups['tower'] and groups['tower']|length > 1
+  with_items: "{{ tower_firewall_ha_ports }}"
+  notify: restart iptables
+
+- name: Enable HA Tower firewall management ports
+  lineinfile:
+    dest: /etc/sysconfig/iptables
+    state: present
+    regexp: "^.*INPUT.*tcp.*{{item}}.*ACCEPT"
+    insertafter: "^:OUTPUT "
+    line: "-A INPUT -p tcp --dport {{item}} -j ACCEPT"
+  when: inventory_hostname in groups['tower'] and groups['tower']|length > 1 and firewalld_rabbitmq_enable_manager|bool
+  with_items: "{{ tower_cluster_management_ports }}"
+  notify: restart iptables
+
+- name: Enable Standalone Database firewall ports
+  lineinfile:
+    dest: /etc/sysconfig/iptables
+    state: present
+    regexp: "^.*INPUT.*tcp.*{{item}}.*ACCEPT"
+    insertafter: "^:OUTPUT "
+    line: "-A INPUT -p tcp --dport {{item}} -j ACCEPT"
+  when: groups['database'] is defined and inventory_hostname in groups['database']
+  with_items: "{{ database_firewall_ports }}"
+  notify: restart iptables

@@ -1,0 +1,3 @@
+---
+config_dynamic_database: 'internal'
+config_dynamic_user: 0

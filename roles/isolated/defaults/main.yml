@@ -1,0 +1,14 @@
+---
+# Indicate whether to verify gpg signatures during install
+gpgcheck: 1
+
+aw_user: awx
+aw_group: awx
+awx_install_home: '/var/lib/awx'
+
+isolated_package_name: ansible-tower-isolated
+isolated_package_rpm: '{{ isolated_package_name }} == {{ isolated_package_version }}'
+
+# Indicate whether to upgrade Ansible as well as Tower
+upgrade_ansible_with_tower: false
+isolated_key_generation: 'yes'

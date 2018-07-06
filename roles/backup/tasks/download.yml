@@ -1,0 +1,54 @@
+---
+- name: Compress the backup data.
+  shell: tar cvfz ../{{ inventory_hostname }}.tar.gz .
+  args:
+    chdir: '{{ backup_dir.rstrip("/") }}/{{ now }}/'
+  notify: Remove the backup tarball.
+
+- name: Compress the common backup data.
+  shell: tar cvfz ../common.tar.gz .
+  args:
+    chdir: '{{ backup_dir.rstrip("/") }}/common/'
+  when: inventory_hostname == groups['tower'][0]
+  notify: Remove the common tarball.
+
+- name: Make a directory to hold the multiple backup files
+  file:
+    path: '{{ backup_dest.rstrip("/") }}/{{ now }}'
+    state: directory
+  become: false
+  run_once: true
+  delegate_to: localhost
+
+- name: Download the system backup.
+  fetch:
+    dest: '{{ backup_dest.rstrip("/") }}/{{ now }}/'
+    fail_on_missing: yes
+    flat: yes
+    src: '{{ backup_dir.rstrip("/") }}/{{ inventory_hostname }}.tar.gz'
+
+- name: Download the common backup.
+  fetch:
+    dest: '{{ backup_dest.rstrip("/") }}/{{ now }}/'
+    fail_on_missing: yes
+    flat: yes
+    src: '{{ backup_dir.rstrip("/") }}/common.tar.gz'
+  when: inventory_hostname == groups['tower'][0]
+
+- name: Archive backup
+  shell: tar cvfz ../tower-backup-{{ now }}.tar.gz .
+  args:
+    chdir: '{{ backup_dest.rstrip("/") }}/{{ now }}'
+  notify: Remove backup dest stage directory.
+  run_once: true
+  delegate_to: localhost
+  
+- name: Create symbolic link to the most recent backup
+  file:
+    state: 'link'
+    src: '{{ backup_dest.rstrip("/") }}/tower-backup-{{ now }}.tar.gz'
+    path: '{{ backup_dest.rstrip("/") }}/tower-backup-latest.tar.gz'
+    force: yes
+  become: false
+  run_once: true
+  delegate_to: localhost
