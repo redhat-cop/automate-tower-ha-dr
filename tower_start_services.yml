@@ -1,0 +1,9 @@
+---
+
+- name: Start Tower services
+  gather_facts: no
+  hosts: tower
+  become: true
+  tasks:
+    - name: Start tower
+      command: ansible-tower-service start

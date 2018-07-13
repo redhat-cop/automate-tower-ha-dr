@@ -1,0 +1,9 @@
+---
+
+- name: Stop Tower services
+  gather_facts: no
+  hosts: tower
+  become: true
+  tasks:
+    - name: Stop tower
+      command: ansible-tower-service stop

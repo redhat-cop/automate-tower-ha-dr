@@ -1,0 +1,93 @@
+---
+
+- hosts: localhost
+  gather_facts: no
+  become: true
+  vars:
+    key_vault_file: tower_secret_key_vault
+    tower_delegate: "{{groups['tower'][0]}}"
+    tower_backup_file: tower-backup-latest.tar.gz
+  tasks:
+
+  - fail:
+      msg: vault_pass_file must be passed as an extra var
+    when: vault_pass_file is not defined
+
+  - name: wait for connection to tower host
+    wait_for_connection:
+      delay: 0
+      timeout: 1
+    delegate_to: "{{ tower_delegate }}"
+    register: tower_down
+    ignore_errors: yes
+
+  - block:
+
+    - debug:
+        msg: "Tower node is inaccessible via Ansible. Attempting to use backup"
+
+    - name: determine if backup file exists
+      stat:
+        path: "{{tower_backup_file}}"
+      register: tower_backup
+
+    - fail:
+        msg: "{{tower_backup_file}} does not exist. You can specify a backup file with -e tower_backup_file=BACKUP_TARBALL"
+      when: not tower_backup.stat.exists
+
+    - name: create a tmp directory for tower backup
+      tempfile:
+        state: directory
+      register: tower_backup_dir
+
+    - name: extract tower backup to temp directory {{ tower_backup_dir.path }}
+      unarchive:
+        src: "{{tower_backup_file}}"
+        dest: "{{tower_backup_dir.path}}"
+
+    - name: extract common.tgz file of backup
+      unarchive:
+        src: "{{tower_backup_dir.path}}/common.tar.gz"
+        dest: "{{tower_backup_dir.path}}"
+
+    - name: get content of SECRET_KEY file
+      slurp:
+        src: "{{tower_backup_dir.path}}/SECRET_KEY"
+      register: secret_key
+
+    - name: remove temp file with vault pass
+      file:
+        path: "{{ tower_backup_dir.path }}"
+        state: absent
+
+    - name: encrypt the secret key
+      command: "ansible-vault encrypt_string {{ secret_key.content | b64decode }}  --vault-password-file={{vault_pass_file}}"
+      register: secret_key_encrypted
+
+    - name: secret_key_content
+      copy:
+        content: "secret_key: {{ secret_key_encrypted.stdout }}"
+        dest: "{{ key_vault_file }}"
+      delegate_to: localhost
+
+    when: tower_down.failed
+
+  - block:
+    - name: obtain secret key from tower node
+      slurp:
+        src: /etc/tower/SECRET_KEY
+      register: secret_key
+      ignore_errors: yes
+      delegate_to: "{{ groups['tower'][0]}}"
+
+    - name: encrypt the secret key
+      command: "ansible-vault encrypt_string {{ secret_key.content | b64decode }}  --vault-password-file={{vault_pass_file}}"
+      register: secret_key_encrypted
+
+    - name: secret_key_content
+      copy:
+        content: "secret_key: {{ secret_key_encrypted.stdout }}"
+        dest: "{{ key_vault_file }}"
+      delegate_to: localhost
+
+    when: not tower_down.failed

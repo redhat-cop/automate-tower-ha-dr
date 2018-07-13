@@ -1,0 +1,23 @@
+---
+
+- hosts: tower
+  gather_facts: no
+  become: true
+  vars:
+    key_vault_file: tower_secret_key_vault
+  vars_files:
+  - "{{ key_vault_file }}"
+  tasks:
+  - file:
+      state: directory
+      path: /etc/tower
+      mode: 0640
+  - copy:
+      content: "{{secret_key}}"
+      dest: "/etc/tower/SECRET_KEY"
+      mode: 0640
+  # adding this because installer fails this was left behind
+  # and awx user and group was removed
+  - file:
+      path: /var/log/tower
+      state: absent
