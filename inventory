@@ -1,27 +1,42 @@
+
 [tower]
-localhost ansible_connection=local
+towervm1 ansible_ssh_host="10.26.10.50"
+#towervm2 ansible_ssh_host="10.26.10.51"
 
 [database]
+towerdb1 ansible_ssh_host="10.26.10.20"
+
+[database_replica]
+towerdb2 ansible_ssh_host="10.26.10.21" pgsqlrep_type=local
+towerdb3 ansible_ssh_host="10.26.10.22" pgsqlrep_type=remote
+
+[database_all:children]
+database
+database_replica
+
+[database_all:vars]
+pgsqlrep_password=password4
 
 [all:vars]
-admin_password=''
+ansible_become = true
+ansible_user = 'vagrant'
+ansible_private_key_file="/mnt/mp-storage-archive/cloud/insecure_private_key"
+ansible_ssh_common_args='-o StrictHostKeyChecking=no'
 
-pg_host=''
-pg_port=''
+admin_password='password1'
+
+pg_host='10.26.10.20'
+pg_port='5432'
 
 pg_database='awx'
 pg_username='awx'
-pg_password=''
+pg_password='password3'
 
 rabbitmq_port=5672
 rabbitmq_vhost=tower
 rabbitmq_username=tower
-rabbitmq_password=''
+rabbitmq_password='password2'
 rabbitmq_cookie=cookiemonster
 
 # Needs to be true for fqdns and ip addresses
-rabbitmq_use_long_name=false
-
-# Isolated Tower nodes automatically generate an RSA key for authentication;
-# To disable this behavior, set this value to false
-# isolated_key_generation=true
+rabbitmq_use_long_name=true
