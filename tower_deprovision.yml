@@ -1,0 +1,60 @@
+---
+
+- hosts: localhost
+  gather_facts: no
+  vars:
+    tower_host: "{{ groups['tower'][0] }}"
+    tower_api_password: "{{ hostvars[tower_host]['admin_password'] }}"
+    tower_api_user: admin
+    tower_protocol: "https"
+  tasks:
+  - include_role:
+      name: tower_utils
+  - set_fact:
+      tower_api_base: "{{ tower_protocol }}://{{ tower_host | infer_address(hostvars) }}"
+
+  - name: get instance groups (excluding isolated)
+    uri:
+      url: "{{ tower_api_base }}/api/v2/instance_groups?controller=null"
+      method: GET
+      user: "{{ tower_api_user }}"
+      password: "{{ tower_api_password }}"
+      validate_certs: False
+      status_code: [ 200, 201 ]
+    register: instance_groups
+    changed_when: False
+
+  - name: get instance group instances
+    uri:
+      url: "{{ tower_api_base }}{{ item['related']['instances'] }}"
+      method: GET
+      user: "{{ tower_api_user }}"
+      password: "{{ tower_api_password }}"
+      validate_certs: False
+      status_code: [ 200, 201 ]
+    register: response
+    changed_when: False
+    with_items: "{{ instance_groups.json.results }}"
+
+  - name: set facts for configured instances
+    set_fact:
+      tower_instances: "{{ response.results | map(attribute='json') | map(attribute='results') | flatten | map(attribute='hostname') | list }}"
+
+  - name: set fact for all instance groups
+    set_fact:
+      inventory_instance_groups: "{{ (groups | select('match', 'instance_group') | list ) + (groups | select('match', 'tower') | list) }}"
+
+  - name: set fact for each instance in instance instance_groups
+    set_fact:
+      inventory_instances: "{{  inventory_instance_groups | map('extract', groups) | flatten | map('infer_address', hostvars) | list }}"
+
+  - name: determine differences
+    set_fact:
+      inventory_only_instances: "{{ inventory_instances | difference(tower_instances) }}"
+      tower_only_instances: "{{ tower_instances | difference(inventory_instances) }}"
+
+  - name: deprovision instances not in inventory
+    shell: "awx-manage deprovision_instance --hostname={{ item }}"
+    with_items: "{{tower_only_instances}}"
+    delegate_to: "{{tower_host}}"
+    become: true
