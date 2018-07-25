@@ -42,6 +42,9 @@ To "fail back" to the original configuration and primary cluster execute. `./tow
 
 If you want to do a DR failover from the HA failover configuration execute `./tower_dr_failover.sh -c inventory_ha -d inventory_dr`
 
+**Why are you using bash scripts?**
+
+Because people make mistakes when there are too many manual steps.  The shell scripts are simple, only run ansible scripts and can easily be teased apart into the individual playbook runs.
 
 
 
