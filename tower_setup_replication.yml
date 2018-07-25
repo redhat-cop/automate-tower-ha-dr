@@ -39,16 +39,12 @@
     delegate_to: localhost
     run_once: true
 
-  - name: include tower_utils role for filter plugin
-    include_role:
-        name: tower_utils
-
   - name: set facts for master and replica. Consider using facts?
     set_fact:
       _pgsqlrep_master_address: "{{ groups['database'][0] | infer_address(hostvars) }}"
       _pgsqlrep_replica_address: "{{ groups['database_replica'] | map('infer_address', hostvars) | list }}"
 
-  - name: PostgreSQL streaming replication pre-preflight check. Cont'd
+  - name: PostgreSQL streaming replication pre-preflight check. Contd
     block:
       - name: ensure pg_host has value of master database
         fail:

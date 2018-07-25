@@ -8,8 +8,6 @@
     tower_api_user: admin
     tower_protocol: "https"
   tasks:
-  - include_role:
-      name: tower_utils
   - set_fact:
       tower_api_base: "{{ tower_protocol }}://{{ tower_host | infer_address(hostvars) }}"
 

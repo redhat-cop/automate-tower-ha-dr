@@ -6,9 +6,6 @@
   vars:
     dbhost: "{{groups['database'][0]}}"
   tasks:
-  - name: include tower utils role
-    include_role:
-      name: tower_utils
   - debug: msg="{{dbhost | infer_address(hostvars)}}"
   - name: Update Tower postgres.py
     lineinfile:
