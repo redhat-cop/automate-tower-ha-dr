@@ -1,6 +1,48 @@
 High Level Workflow (Temporary)
 ================================
 
+ASSUMPTIONS
+- you've already provisioned the machines you're going to install on
+- if you're not running as root and need to use privilege escalation (eg sudo) you need to set it up in the inventory (`ansible_become=true`)
+
+1) Clone this repository.  In its current state is has the online Ansible Tower 3.2.5 installer inside.  I did not do any testing with the bundled installer.
+
+2) Update the inventory_pm (primary/base inventory), inventory_ha (HA configuration inventory) and inventory_dr (DR configuration inventory) as appropriate.  The inventory_pm should contain only your primary cluster hosts and the databases you plan on replicating to. The inventory_dr should only contain your DR cluster hosts.  Only one HA ("local") database and one DR ("remote") database is supported.  These are identified by the pgsqlrep_type hostvar.  Make sure you get the right databases configured as primary and replicas in each inventory.
+
+3) Run the Tower installer normally against your primary inventory `./setup.sh -i inventory_pm`
+
+4) Run the the playbook to setup replication to the local and/or remote databases `ansible-playbook -i inventory_pm tower_setup_replication.yml`.  You can check the status of replication by running `ansible-playbook -i inventory_pm tower_check_replication.yml`
+
+5) Run the script to prep the DR cluster for installation.  This will move the SECRET_KEY to the DR nodes. `./tower_dr_prep.sh -c inventory_pm -d inventory_dr`
+
+You should now be ready to execute failover scenarios.
+
+**HA failover**
+
+NOTE: if you do not want to initialize replication back to the primary database and/or DR(remote) database you will need to remove them from the inventory. They can always be added later
+
+To perform a HA failover, which will promote the HA/local replica database to primary and point Tower to it execute `./tower_pgsql_ha_failover.sh -c inventory_pm -a inventory_ha`
+
+If the primary database has truly failed it can be redeployed/remediate/turned on and replication re-enabled so a "fail back" can occur but re-running `./tower_pgsql_ha_failover.sh -c inventory_pm -a inventory_ha`
+
+One the primary database is fixe you can "fail back" to the original configuration by executing`./tower_pgsql_ha_failover.sh -c inventory_pm -a inventory_ha -b`.
+
+**DR failover**
+
+NOTE: if you do not want to initialize replication back to the primary database and/or HA(local) database you will need to remove them from the inventory.  They can always be added later
+
+To perform a DR failover which will promote the DR/remote replication database to primary, run the tower installer against the DR nodes/newly promoted DR database and remove previous primary nodes execute `./tower_dr_failover.sh -c inventory_pm -d inventory_dr`
+
+Once the primary cluster is repaired you should re-run the failover to setup to enable replication. `./tower_dr_failover.sh -c inventory_pm -d inventory_dr`
+
+To "fail back" to the original configuration and primary cluster execute. `./tower_dr_failover.sh -c inventory_pm -d inventory_dr -b`
+
+
+**Other failovers**
+
+If you want to do a DR failover from the HA failover configuration execute `./tower_dr_failover.sh -c inventory_ha -d inventory_dr`
+
+
 
 
 Ansible Tower Clustering/High Availability and Disaster Recover
