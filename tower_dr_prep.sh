@@ -65,12 +65,6 @@ while getopts 'c:d:b:r' opt; do
     esac
 done
 
-if [ "${FAILBACK}" -eq "1" ]; then
-    TMP=$CURRENT_INVENTORY_FILE
-    CURRENT_INVENTORY_FILE=$DR_INVENTORY_FILE
-    DR_INVENTORY_FILE=$TMP
-fi
-
 
 echo "CURRENT_INVENTORY_FILE ${CURRENT_INVENTORY_FILE}"
 echo "DR_INVENTORY_FILE ${DR_INVENTORY_FILE}"

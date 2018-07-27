@@ -1,6 +1,0 @@
-- import_tasks: pgsql_version.yml
-  tags:
-    - always
-
-- include_tasks: "{{ pgsqlrep_role }}.yml"
-  when: pgsqlrep_role != 'skip'
