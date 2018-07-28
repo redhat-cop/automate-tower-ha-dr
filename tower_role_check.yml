@@ -1,0 +1,51 @@
+---
+
+- name: Ensure replication (potentially others in the future) are installed
+  hosts: localhost
+  vars:
+    external_role_path: roles_external
+    repl_role: samdoran.pgsql-replication
+    repl_role_archive_dir: ansible-role-pgsql-replication-master
+  tasks:
+  - name: see if {{repl_role}} role is installed
+    command: "ansible-galaxy -p {{ external_role_path }} list {{repl_role}}"
+    register: repl_role_status
+
+  - name: attempt {{repl_role}} install
+    block:
+    - name: ensure connectivity to galaxy
+      uri:
+        url: https://galaxy.ansible.com/api
+      register: galaxy_status
+      ignore_errors: yes
+
+    - name: if there is galaxy connectivity install from reqts file
+      block:
+      - name: ensure replication galaxy role is installed
+        command: "ansible-galaxy -p {{ external_role_path }} -r {{external_role_path}}/requirements.yml install"
+      when: not galaxy_status.failed
+
+    - name: no galaxy connectivity
+      block:
+      - name: check for extra vars
+        fail:
+          msg: |
+            No galaxy connectivity.  Path to tar/zip containing {{repl_role}} role must be passed
+            as extra var 'replication_role_archive'
+        when: replication_role_archive is not defined
+
+      # NOTE: this is broken on MacOS 10.13. Ansible can't find gtar
+      # - name: extract role file to role directory
+      #   unarchive:
+      #     src: "{{replication_role_archive}}"
+      #     dest: "{{ external_role_path}}"
+      #   register: repl_role_extract
+
+      - name: extract role archive to role directory
+        command: "tar -C {{external_role_path}} -xzf  {{replication_role_archive}}"
+
+      - name: normalize replication role path
+        command: "mv {{external_role_path}}/{{repl_role_archive_dir}} {{external_role_path}}/{{repl_role}}"
+
+      when: galaxy_status.failed
+    when: "'not found' in repl_role_status.stdout"

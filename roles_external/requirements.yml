@@ -1,1 +1,4 @@
 - src: samdoran.pgsql-replication
+  #src: https://github.com/samdoran/ansible-role-pgsql-replication/archive/master.tar.gz
+  #name: pgsql-replication
+  version: master

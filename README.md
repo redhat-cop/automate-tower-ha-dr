@@ -11,6 +11,8 @@ ASSUMPTIONS
 
 3) Run the Tower installer normally against your primary inventory `./setup.sh -i inventory_pm`
 
+3.1) Run the playbook to ensure the samdoran.pgsql-replication roles is installed. `ansible-playbook tower_role_check.yml`.  If you don not have connectivity to github you'll need to download the tar archive and pass the path to the playbook, `ansible-playbook tower_role_check.yml -e replication_role_archive=ROLE_TGZ_ARCHIVE_LOCATION`
+
 4) Run the the playbook to setup replication to the local and/or remote databases `ansible-playbook -i inventory_pm tower_setup_replication.yml`.  You can check the status of replication by running `ansible-playbook -i inventory_pm tower_check_replication.yml`
 
 5) Run the script to prep the DR cluster for installation.  This will move the SECRET_KEY to the DR nodes. `./tower_dr_prep.sh -c inventory_pm -d inventory_dr`
