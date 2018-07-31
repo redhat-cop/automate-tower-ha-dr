@@ -2,3 +2,7 @@ tower_secret_key_vault
 *.log
 *.pyc
 roles_external/samdoran.pgsql-replication
+tower-backup*
+2018*
+2019*
+2020*
