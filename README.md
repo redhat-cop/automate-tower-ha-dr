@@ -39,6 +39,9 @@ Once the primary cluster is repaired you should re-run the failover to setup to 
 
 To "fail back" to the original configuration and primary cluster execute. `./tower_dr_failover.sh -c inventory_pm -d inventory_dr -b`
 
+**Backup and Restore**
+
+https://docs.ansible.com/ansible-tower/latest/html/administration/backup_restore.html#backup-and-restore-for-clustered-environments
 
 **Other failovers**
 
