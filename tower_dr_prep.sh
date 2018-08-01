@@ -120,5 +120,5 @@ fi
 ansible-playbook -i "${CURRENT_INVENTORY_FILE}" -v \
     tower_dr_prep.yml -e "${_EXTRA_VARS}" 2>&1 | tee $TEMP_LOG_FILE
 
-ansible-playbook -i "${CURRENT_INVENTORY_FILE}" -v \
+ansible-playbook -i "${DR_INVENTORY_FILE}" -v \
     tower_dr_setup.yml -e "${_EXTRA_VARS}" --vault-password-file=${TMP_VAULT_FILE} 2>&1 | tee $TEMP_LOG_FILE
