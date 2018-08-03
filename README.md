@@ -1,5 +1,8 @@
-High Level Workflow (Temporary)
+Configure HA and/or DR on your Tower Cluster
 ================================
+
+**Reference Architecture**
+![Ref Arch](readme_images/TowerClusterReferenceArch.png "Ref Arch")
 
 ASSUMPTIONS
 - you've already provisioned the machines you're going to install on
@@ -20,7 +23,7 @@ ASSUMPTIONS
 You should now be ready to execute failover scenarios.
 
 **HA failover**
-
+![HA Failover Diagram](readme_images/TowerHA_Failover.png "HA Failover")
 NOTE: if you do not want to initialize replication back to the primary database and/or DR(remote) database you will need to remove them from the inventory. They can always be added later
 
 To perform a HA failover, which will promote the HA/local replica database to primary and point Tower to it execute `./tower_pgsql_ha_failover.sh -c inventory_pm -a inventory_ha`
@@ -29,8 +32,10 @@ If the primary database has truly failed it can be redeployed/remediate/turned o
 
 One the primary database is fixe you can "fail back" to the original configuration by executing`./tower_pgsql_ha_failover.sh -c inventory_pm -a inventory_ha -b`.
 
-**DR failover**
+![HA Failback Diagram](readme_images/TowerHA_Failback.png "HA Failback")
 
+**DR failover**
+![DR Failover Diagram](readme_images/TowerDR_Failover.png "DR Failover")
 NOTE: if you do not want to initialize replication back to the primary database and/or HA(local) database you will need to remove them from the inventory.  They can always be added later
 
 To perform a DR failover which will promote the DR/remote replication database to primary, run the tower installer against the DR nodes/newly promoted DR database and remove previous primary nodes execute `./tower_dr_failover.sh -c inventory_pm -d inventory_dr`
@@ -38,6 +43,8 @@ To perform a DR failover which will promote the DR/remote replication database t
 Once the primary cluster is repaired you should re-run the failover to setup to enable replication. `./tower_dr_failover.sh -c inventory_pm -d inventory_dr`
 
 To "fail back" to the original configuration and primary cluster execute. `./tower_dr_failover.sh -c inventory_pm -d inventory_dr -b`
+
+![DR Failback Diagram](readme_images/TowerDR_Failback.png "DR Failback")
 
 **Backup and Restore**
 
@@ -62,8 +69,7 @@ Ansible Tower Clustering/High Availability and Disaster Recover
 In addition to the base single node installation, Tower offers [clustered configurations](https://docs.ansible.com/ansible-tower/3.2.4/html/administration/clustering.html) to allow users to horizontally scale job capacity (forks) on nodes.  It is recommended to deploy tower nodes in odd numbers to prevent issues with underlying RabbitMQ clustering.
 
 Tower clustering minimizes the potential of job execution service outages by distributing jobs across the cluster.
-For example, if you have an Ansible Tower installation with a three node cluster configuration and the Ansible Tower services on a node become unavailable in the cluster, jobs will continue to be executed on the remaining two nodes.  It should be noted, the failed Ansible Tower node needs to remediated to return to a supported
-configuration containing an odd number of nodes.  See [setup considerations] (https://docs.ansible.com/ansible-tower/latest/html/administration/clustering.html#setup-considerations)
+For example, if you have an Ansible Tower installation with a three node cluster configuration and the Ansible Tower services on a node become unavailable in the cluster, jobs will continue to be executed on the remaining two nodes.  It should be noted, the failed Ansible Tower node needs to remediated to return to a supported configuration containing an odd number of nodes.  See [setup considerations] (https://docs.ansible.com/ansible-tower/latest/html/administration/clustering.html#setup-considerations)
 
 Tower cluster nodes and database should be geographically co-located with low latency (<10 ms) and reliable connectivity.  Deployments that span datacenters are not recommended due to transient spikes in latency and/or outages.
 
