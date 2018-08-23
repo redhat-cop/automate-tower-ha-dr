@@ -18,6 +18,14 @@ database_replica
 pgsqlrep_password=password4
 
 [all:vars]
+
+#BEGIN TOWER 3.3 nightly build
+aw_repo_url="http://nightlies.testing.ansible.com/ansible-tower_nightlies_m8u16fz56qr6q7/release_3.3.0"
+gpgcheck=0
+required_ram=0
+tower_migration_skip=1
+#END TOWER 3.3
+
 ansible_become = true
 ansible_user = 'vagrant'
 ansible_private_key_file="/mnt/mp-storage-archive/cloud/insecure_private_key"

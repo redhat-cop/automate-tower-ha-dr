@@ -51,6 +51,12 @@ is_ansible_installed() {
     type -p ansible-playbook > /dev/null
 }
 
+is_ansible_new_enough() {
+    ver=$(ansible-playbook --version | awk '/^ansible/ { print $2 }')
+    req_ver=$(awk '/^minimum_ansible_version/ { print $2 }' roles/preflight/defaults/main.yml)
+    python -c "import sys ; from distutils.version import LooseVersion ; sys.exit(0) if (LooseVersion('$ver') > LooseVersion($req_ver)) else sys.exit(1)"
+}
+
 is_bundle_install() {
     [ -d "bundle" ] && [[ ${OVERRIDE_BUNDLE_INSTALL} == false ]]
 }
@@ -266,6 +272,8 @@ fi
 is_bundle_install
 if [ $? -eq 0 ]; then
     DISTRIBUTION_MAJOR_VERSION=$(distribution_major_version)
+    is_ansible_installed && is_ansible_new_enough
+    [ $? -eq 1 ] && \
     if [ "$(distribution_id)" == "centos" ] || [ "$(distribution_id)" == "rhel" ] || [ "$(distribution_id)" == "ol" ]; then
         # Attempt to find ansible package for the current distro in the bundle bundle
         ANSIBLE_RPM_PATH=$(find_bundle_rpm "ansible*.el${DISTRIBUTION_MAJOR_VERSION}.*noarch.rpm")

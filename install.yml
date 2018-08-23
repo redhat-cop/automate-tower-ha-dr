@@ -27,6 +27,15 @@
     - name: group hosts for supported distributions
       group_by: key="supported"
       changed_when: false
+      when: ansible_distribution == "Ubuntu" or ansible_distribution_version | version_compare ('7.4', '>=')
+
+- name: "Group deprecated distributions"
+  hosts: Ubuntu-14.04
+  gather_facts: false
+  tasks:
+    - name: group hosts for supported distributions
+      group_by: key="deprecated"
+      changed_when: false
 
 - name: "Ensure all node OS distributions are supported"
   hosts: "!supported"
@@ -35,7 +44,7 @@
     - name: fail for unsupported distribution
       fail: msg="{{ ansible_distribution }} {{ ansible_distribution_version }}
                  is not a supported OS for a Tower installation.  Supported
-                 OSes include Red Hat Enterprise Linux 7, CentOS 7, or
+                 OSes include Red Hat Enterprise Linux 7.4+, CentOS 7.4+, or
                  Ubuntu 14.04/16.04."
 
 - name: "Ensure all isolated node OS distributions are supported"
@@ -45,15 +54,20 @@
     - name: fail for unsupported distribution
       fail: msg="{{ ansible_distribution }} {{ ansible_distribution_version }}
                  is not a supported OS for a Tower isolated node. Supported
-                 OSes include Red Hat Enterprise Linux 7 and CentOS 7."
+                 OSes include Red Hat Enterprise Linux 7.4+ and CentOS 7.4+."
 
 - name: "Check for deprecated platforms"
-  hosts: Ubuntu-14.04
+  hosts: deprecated
   gather_facts: false
   tasks:
-    - name: warn on deprecated platforms
-      debug: msg="Support for {{ ansible_distribution }} {{ ansible_distribution_version }}
-                  as a Tower platform is deprecated and will be removed in a future release."
+    - name: warn for deprecated distribution
+      fail: msg="{{ ansible_distribution }} {{ ansible_distribution_version }}
+                 is a deprecated OS for a Tower installation, and support will
+                 be removed in a future release."
+      ignore_errors: true
+
+    - name: pause for warning
+      pause: seconds=5
 
 - name: "Define role discovered variables, usable throughout the playbook"
   hosts: tower:database:instance_group_*
@@ -111,7 +125,6 @@
   gather_facts: false
   roles:
     - role: repos_el
-      tags: packages
       when: ansible_os_family == "RedHat"
 
 - name: "Install postgres database node"

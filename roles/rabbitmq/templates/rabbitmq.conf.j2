@@ -1,0 +1,3 @@
+loopback_users = none
+listeners.tcp.default = {{ rabbitmq_port|default(5672) }}
+cluster_partition_handling = pause_minority

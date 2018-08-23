@@ -19,26 +19,26 @@
   file: path={{awx_install_home}} state=directory owner={{aw_user}} group={{aw_group}} mode=0755
 
 - name: Register associated isolated instances.
-  shell: awx-manage register_instance --hostname="{{ inventory_hostname }}"
+  shell: awx-manage provision_instance --hostname="{{ inventory_hostname }}"
   args:
     executable: /bin/bash
-  register: register_instance
-  changed_when: "'changed: True' in register_instance.stdout"
+  register: provision_instance
+  changed_when: "'changed: True' in provision_instance.stdout"
   become_user: '{{ aw_user }}'
   become: yes
   delegate_to: "{{ _controller }}"
 
 - name: Register associated isolated instance group.
-  shell: awx-manage register_queue --queuename="{{ item|regex_replace('^isolated_group_','') }}" --hostnames="{{ inventory_hostname }}" --controller="{{ controller }}"
+  shell: awx-manage register_queue --queuename="{{ item|regex_replace('^isolated_group_','') }}" --hostnames="{{ ','.join(groups[item]) }}" --controller="{{ controller }}"
   args:
     executable: /bin/bash
   become_user: '{{ aw_user }}'
   become: True
   register: register_queue
-  changed_when: "'Added' in register_queue.stdout"
+  changed_when: "'changed: True' in register_queue.stdout"
   delegate_to: "{{ _controller }}"
   with_items: "{{ group_names }}"
-  when: item | match("^isolated_group_.+$")
+  when: item.startswith('isolated_group_')
 
 - name: Set the isolated key generation settings based on the installer flag
   shell: echo 'settings.AWX_ISOLATED_KEY_GENERATION = {{ "True" if isolated_key_generation|bool else "False" }}' | awx-manage shell_plus
@@ -63,6 +63,7 @@
   become: True
   register: isolated_key
   delegate_to: "{{ _controller }}"
+  run_once: True
   when: isolated_key_generation|bool
 
 - name: Set authorized key
@@ -71,3 +72,7 @@
     state: present
     key: "{{ isolated_key.stdout }}"
   when: isolated_key_generation|bool
+
+- name: Perform the first isolated heartbeat
+  shell: echo 'from awx.main.tasks import awx_isolated_heartbeat; awx_isolated_heartbeat.apply_async()' | awx-manage shell_plus
+  delegate_to: "{{ _controller }}"

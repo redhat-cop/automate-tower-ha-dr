@@ -1,4 +1,5 @@
 ---
+
 - name: If Ansible does not provide a system UUID, get a random one.
   shell: "echo 'import uuid; print(uuid.uuid4())' | python"
   register: system_uuid
@@ -14,23 +15,32 @@
     src: ha.py
 
 - name: Register the tower instance in the database.
-  shell: awx-manage register_instance --hostname="{{ cluster_host_identifier }}"
+  shell: awx-manage provision_instance --hostname="{{ cluster_host_identifier }}"
   args:
     executable: /bin/bash
   become_user: '{{ aw_user }}'
   become: True
-  register: register_instance
-  changed_when: "'changed: True' in register_instance.stdout"
+  register: provision_instance
+  changed_when: "'changed: True' in provision_instance.stdout"
+
+- name: set fact for cluster identifier
+  set_fact:
+    cluster_host_identifier: "{{cluster_host_identifier}}"
 
 - name: Register tower instance groups.
-  shell: awx-manage register_queue --queuename="{{ item }}" --hostnames="{{ cluster_host_identifier }}"
+  shell: >
+     awx-manage register_queue
+     --queuename="{{ item|regex_replace('^instance_group_','') }}"
+     --hostnames="{{ ','.join(groups[item] | map('extract', hostvars, 'cluster_host_identifier') ) }}"
   args:
     executable: /bin/bash
   become_user: '{{ aw_user }}'
   become: True
+  run_once: True
   register: register_queue
-  changed_when: "'Added' in register_queue.stdout"
-  with_items: "{{ awx_instance_groups }}"
+  changed_when: "'changed: True' in register_queue.stdout"
+  when: item.startswith('instance_group_') or item == 'tower'
+  with_items: "{{ groups }}"
 
 - name: Create the default organization if it is needed.
   shell: awx-manage create_preload_data

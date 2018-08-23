@@ -1,3 +1,11 @@
 NODENAME=rabbitmq@{{ rabbitmq_env_host }}
+{% if rabbitmq_use_long_name is defined %}
 USE_LONGNAME={{ rabbitmq_use_long_name|bool|string|lower }}
-RABBITMQ_NODE_PORT={{ rabbitmq_port }}
+{% else %}
+if [ "${NODENAME%%.*}" != "${NODENAME}" ]; then
+    USE_LONGNAME=true
+else
+    USE_LONGNAME=false
+fi
+{% endif %}
+RABBITMQ_NODE_PORT={{ rabbitmq_port|default(5672) }}

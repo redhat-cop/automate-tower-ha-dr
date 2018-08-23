@@ -48,6 +48,7 @@
 - name: "Include {{ 'no' if tower_firewall_type == 'none' else tower_firewall_type }} tasks"
   include: '{{ tower_firewall_type }}.yml'
   when: >
+    firewalld_running is defined and systemctl_unit_files is defined and iptables_installed is defined and
     firewalld_running.rc == 0 or
     systemctl_unit_files.stdout_lines | select('match','firewalld.service\s+enabled') | list | length == 1 or
     ( iptables_installed.rc == 0 and iptables_exists.stat.exists and iptables_service.stat.exists )

@@ -12,6 +12,7 @@
     permanent: true
     state: enabled
     immediate: yes
+    zone: "{{ tower_firewalld_zone }}"
   when: inventory_hostname in groups['tower']
   with_items: "{{ tower_firewall_ports }}"
 
@@ -21,6 +22,7 @@
     permanent: true
     state: enabled
     immediate: yes
+    zone: "{{ tower_firewalld_zone }}"
   when: inventory_hostname in groups['tower'] and groups['tower']|length > 1
   with_items: "{{ tower_firewall_ha_ports }}"
 
@@ -30,6 +32,7 @@
     permanent: true
     state: enabled
     immediate: yes
+    zone: "{{ tower_firewalld_zone }}"
   when: inventory_hostname in groups['tower'] and groups['tower']|length > 1 and firewalld_rabbitmq_enable_manager|bool
   with_items: "{{ tower_cluster_management_ports }}"
 
@@ -39,5 +42,6 @@
     permanent: true
     state: enabled
     immediate: yes
+    zone: "{{ tower_firewalld_zone }}"
   when: groups['database'] is defined and inventory_hostname in groups['database']
   with_items: "{{ database_firewall_ports }}"

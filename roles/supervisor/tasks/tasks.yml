@@ -1,8 +1,4 @@
 ---
-- name: Set extra queues for this host
-  set_fact:
-    rabbitmq_listening_queues: "{{ awx_instance_groups }} + {{ rabbitmq_controlling_queues }} + [ '{{ local_queue }}' ]"
-
 - name: install supervisor config
   template:
     src: 'tower.conf.j2'

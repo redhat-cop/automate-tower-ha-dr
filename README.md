@@ -1,12 +1,34 @@
-Configure HA and/or DR on your Tower Cluster
+Configure High Availability and/or Disaster Recovery on a Tower Cluster
 ================================
 
 **Reference Architecture**
 ![Ref Arch](readme_images/TowerClusterReferenceArch.png "Ref Arch")
 
-ASSUMPTIONS
-- you've already provisioned the machines you're going to install on
-- if you're not running as root and need to use privilege escalation (eg sudo) you need to set it up in the inventory (`ansible_become=true`)
+This diagram represents the reference architecture for a full high availability and disaster recovery solution.
+
+
+*High Availability*
+
+[Ansible Tower clustering](https://docs.ansible.com/ansible-tower/latest/html/administration/clustering.html) provides increased availability by distributing jobs across nodes in a cluster. A failure of a single node will simply result in reduced capacity in the cluster.  The database remains a single point of failure in a cluster.  If the the database becomes unavailable the cluster will also become unavailable.  This configuration provides for a replica database (HA Replica) in the primary cluster datacenter, which can be transitioned to primary.  Although not completely automated, this provides for faster recovery in database outage scenarios.
+
+*Disaster Recovery*
+
+Ansible Tower clusters are not recommended to span datacenter boundaries due to latency and outages concerns.  In the event of a total datacenter failure Ansible Tower would become unavailable.  The Ansible Tower disaster recovery approach allows for failover to pre-provisioned resources in a secondary datacenter.  The database in the secondary datacenter configured as a warm standy/replica of the database in the primary datacenter.  During a failover, Ansible Tower is installed onto the pre-provisioned nodes and pointed to the replica database (promoted to primary)
+
+*Streaming Replication*
+
+[PostgreSQL](https://www.postgresql.org/) provides built in mechanisms to achieve increased availability.  The use of [warm standby or replica databases](https://www.postgresql.org/docs/9.3/static/warm-standby.html) allows for simple and fast failover in recovery scenarios.  
+
+**Configuration**
+
+*Assumptions/Prerequisites*
+
+- all machines are pre-provisioned with authentication mechanism known (password, SSH keys)
+- if not running as root and need to use privilege escalation (eg sudo) you need to set it up in the inventory (`ansible_become=true`)
+
+*Setup*
+
+
 
 1) Clone this repository.  In its current state is has the online Ansible Tower 3.2.5 installer inside.  I did not do any testing with the bundled installer.
 

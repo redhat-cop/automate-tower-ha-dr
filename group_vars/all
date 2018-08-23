@@ -1,4 +1,4 @@
 ---
 tower_package_name: 'ansible-tower'
-tower_package_version: '3.2.5'
-tower_package_release: '1'
+tower_package_version: '3.3.0'
+tower_package_release: '0.git1339'
