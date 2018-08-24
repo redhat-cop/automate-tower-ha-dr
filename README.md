@@ -6,14 +6,29 @@ Configure High Availability and/or Disaster Recovery on a Tower Cluster
 
 This diagram represents the reference architecture for a full high availability and disaster recovery solution.
 
+[Link to Lucidchart diagrams](https://www.lucidchart.com/invitations/accept/10913de1-7235-4ede-a975-38c69a517a56)
 
 *High Availability*
 
 [Ansible Tower clustering](https://docs.ansible.com/ansible-tower/latest/html/administration/clustering.html) provides increased availability by distributing jobs across nodes in a cluster. A failure of a single node will simply result in reduced capacity in the cluster.  The database remains a single point of failure in a cluster.  If the the database becomes unavailable the cluster will also become unavailable.  This configuration provides for a replica database (HA Replica) in the primary cluster datacenter, which can be transitioned to primary.  Although not completely automated, this provides for faster recovery in database outage scenarios.
 
+**NOTE: In the future this feature will delivered and supported by a third party.**
+
+HA Failover
+![HA Failover Diagram](readme_images/TowerHA_Failover.png "HA Failover")
+
+HA Failback
+![HA Failback Diagram](readme_images/TowerHA_Failback.png "HA Failback")
+
 *Disaster Recovery*
 
 Ansible Tower clusters are not recommended to span datacenter boundaries due to latency and outages concerns.  In the event of a total datacenter failure Ansible Tower would become unavailable.  The Ansible Tower disaster recovery approach allows for failover to pre-provisioned resources in a secondary datacenter.  The database in the secondary datacenter configured as a warm standy/replica of the database in the primary datacenter.  During a failover, Ansible Tower is installed onto the pre-provisioned nodes and pointed to the replica database (promoted to primary)
+
+DR Failover
+![DR Failover Diagram](readme_images/TowerDR_Failover.png "DR Failover")
+
+DR Failback
+![DR Failback Diagram](readme_images/TowerDR_Failback.png "DR Failback")
 
 *Streaming Replication*
 
@@ -25,14 +40,34 @@ Ansible Tower clusters are not recommended to span datacenter boundaries due to 
 
 - all machines are pre-provisioned with authentication mechanism known (password, SSH keys)
 - if not running as root and need to use privilege escalation (eg sudo) you need to set it up in the inventory (`ansible_become=true`)
+- this approach has not been tested with the bundled installer
 
 *Setup*
 
 
+1.
 
-1) Clone this repository.  In its current state is has the online Ansible Tower 3.2.5 installer inside.  I did not do any testing with the bundled installer.
+Clone this repository.  In its current state is has the online Ansible Tower 3.2.5 installer inside.
 
-2) Update the inventory_pm (primary/base inventory), inventory_ha (HA configuration inventory) and inventory_dr (DR configuration inventory) as appropriate.  The inventory_pm should contain only your primary cluster hosts and the databases you plan on replicating to. The inventory_dr should only contain your DR cluster hosts.  Only one HA ("local") database and one DR ("remote") database is supported.  These are identified by the pgsqlrep_type hostvar.  Make sure you get the right databases configured as primary and replicas in each inventory.
+```
+git clone ssh://git@gitlab.consulting.redhat.com:2222/towerrescue/ansible_tower_setup.git
+```
+
+If you want to pull in the latest installer you should just overwrite the existing Tower installer files by executing something like.
+
+```
+#download latest tower installer
+curl https://releases.ansible.com/ansible-tower/setup/ansible-tower-setup-latest.tar.gz \
+-o ansible-tower-setup-latest.tar.gz
+
+#extract archive stripping out leading directory
+tar xzf --strip-components=1 -C ansible_tower_setup
+```
+
+
+2.
+
+Update the inventory_pm (primary/base inventory), inventory_ha (HA configuration inventory) and inventory_dr (DR configuration inventory) as appropriate.  The inventory_pm should contain only your primary cluster hosts and the databases you plan on replicating to. The inventory_dr should only contain your DR cluster hosts.  Only one HA ("local") database and one DR ("remote") database is supported.  These are identified by the pgsqlrep_type hostvar.  Make sure you get the right databases configured as primary and replicas in each inventory.
 
 3) Run the Tower installer normally against your primary inventory `./setup.sh -i inventory_pm`
 
@@ -45,7 +80,7 @@ Ansible Tower clusters are not recommended to span datacenter boundaries due to 
 You should now be ready to execute failover scenarios.
 
 **HA failover**
-![HA Failover Diagram](readme_images/TowerHA_Failover.png "HA Failover")
+
 NOTE: if you do not want to initialize replication back to the primary database and/or DR(remote) database you will need to remove them from the inventory. They can always be added later
 
 To perform a HA failover, which will promote the HA/local replica database to primary and point Tower to it execute `./tower_pgsql_ha_failover.sh -c inventory_pm -a inventory_ha`
@@ -54,10 +89,9 @@ If the primary database has truly failed it can be redeployed/remediate/turned o
 
 One the primary database is fixe you can "fail back" to the original configuration by executing`./tower_pgsql_ha_failover.sh -c inventory_pm -a inventory_ha -b`.
 
-![HA Failback Diagram](readme_images/TowerHA_Failback.png "HA Failback")
 
 **DR failover**
-![DR Failover Diagram](readme_images/TowerDR_Failover.png "DR Failover")
+
 NOTE: if you do not want to initialize replication back to the primary database and/or HA(local) database you will need to remove them from the inventory.  They can always be added later
 
 To perform a DR failover which will promote the DR/remote replication database to primary, run the tower installer against the DR nodes/newly promoted DR database and remove previous primary nodes execute `./tower_dr_failover.sh -c inventory_pm -d inventory_dr`
@@ -66,7 +100,7 @@ Once the primary cluster is repaired you should re-run the failover to setup to 
 
 To "fail back" to the original configuration and primary cluster execute. `./tower_dr_failover.sh -c inventory_pm -d inventory_dr -b`
 
-![DR Failback Diagram](readme_images/TowerDR_Failback.png "DR Failback")
+
 
 **Backup and Restore**
 
