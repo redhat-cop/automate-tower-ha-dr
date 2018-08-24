@@ -6,7 +6,6 @@ towerdb3 ansible_host="10.26.10.22"
 
 [database_replica]
 towerdb1 ansible_host="10.26.10.20" pgsqlrep_type=remote
-#towerdb2 ansible_host="10.26.10.21"
 
 [database_all:children]
 database
