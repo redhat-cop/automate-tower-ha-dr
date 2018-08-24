@@ -64,14 +64,160 @@ curl https://releases.ansible.com/ansible-tower/setup/ansible-tower-setup-latest
 tar xzf --strip-components=1 -C ansible_tower_setup
 ```
 
-
 2.
 
 Update the inventory_pm (primary/base inventory), inventory_ha (HA configuration inventory) and inventory_dr (DR configuration inventory) as appropriate.  The inventory_pm should contain only your primary cluster hosts and the databases you plan on replicating to. The inventory_dr should only contain your DR cluster hosts.  Only one HA ("local") database and one DR ("remote") database is supported.  These are identified by the pgsqlrep_type hostvar.  Make sure you get the right databases configured as primary and replicas in each inventory.
 
-3) Run the Tower installer normally against your primary inventory `./setup.sh -i inventory_pm`
+Here is an example of an inventory file for each coniguration
 
-3.1) Run the playbook to ensure the samdoran.pgsql-replication roles is installed. `ansible-playbook tower_role_check.yml`.  If you don not have connectivity to github you'll need to download the tar archive and pass the path to the playbook, `ansible-playbook tower_role_check.yml -e replication_role_archive=ROLE_TGZ_ARCHIVE_LOCATION`
+**inventory_pm (primary inventory)**
+```
+[tower]
+towervm1 ansible_host="10.26.10.50"
+towervm2 ansible_host="10.26.10.51"
+towervm3 ansible_host="10.26.10.52"
+
+[database]
+towerdb1 ansible_host="10.26.10.20"
+
+[database_replica]
+towerdb2 ansible_host="10.26.10.21" pgsqlrep_type=local
+towerdb3 ansible_host="10.26.10.22" pgsqlrep_type=remote
+
+[database_all:children]
+database
+database_replica
+
+[database_all:vars]
+pgsqlrep_password=password4
+
+[all:vars]
+ansible_become = true
+ansible_user = 'ansible_svc'
+ansible_private_key_file="/path/to/key"
+
+admin_password='password1'
+
+pg_host='10.26.10.20'
+pg_port='5432'
+
+pg_database='awx'
+pg_username='awx'
+pg_password='password3'
+
+rabbitmq_port=5672
+rabbitmq_vhost=tower
+rabbitmq_username=tower
+rabbitmq_password='password2'
+rabbitmq_cookie=cookiemonster
+
+# Needs to be true for fqdns and ip addresses
+rabbitmq_use_long_name=true
+```
+
+**inventory_ha (high availability inventory)**
+```
+[tower]
+towervm1 ansible_host="10.26.10.50"
+towervm2 ansible_host="10.26.10.51"
+towervm3 ansible_host="10.26.10.52"
+
+[database]
+towerdb2 ansible_host="10.26.10.21"
+
+[database_replica]
+#TOWER DR - optional. enable when you wish to enable replication for failback
+towerdb1 ansible_host="10.26.10.20" pgsqlrep_type=local
+towerdb3 ansible_host="10.26.10.22" pgsqlrep_type=remote
+
+[database_all:children]
+database
+database_replica
+
+[database_all:vars]
+pgsqlrep_password=password4
+
+[all:vars]
+ansible_become = true
+ansible_user = 'ansible_svc'
+ansible_private_key_file="/path/to/key"
+
+admin_password='password1'
+
+pg_host='10.26.10.21'
+pg_port='5432'
+
+pg_database='awx'
+pg_username='awx'
+pg_password='password3'
+
+rabbitmq_port=5672
+rabbitmq_vhost=tower
+rabbitmq_username=tower
+rabbitmq_password='password2'
+rabbitmq_cookie=cookiemonster
+
+# Needs to be true for fqdns and ip addresses
+rabbitmq_use_long_name=true
+```
+
+
+**inventor_dr (disaster recovery inventory)**
+```
+[tower]
+towervm4 ansible_host="10.26.10.60"
+towervm5 ansible_host="10.26.10.61"
+towervm6 ansible_host="10.26.10.62"
+
+[database]
+towerdb3 ansible_host="10.26.10.22"
+
+[database_replica]
+#TOWER DR - optional. enable when you wish to enable replication for failback
+towerdb1 ansible_host="10.26.10.20" pgsqlrep_type=remote
+
+[database_all:children]
+database
+database_replica
+
+[database_all:vars]
+pgsqlrep_password=password4
+
+[all:vars]
+ansible_become = true
+ansible_user = 'ansible_svc'
+ansible_private_key_file="/path/to/key"
+
+admin_password='password1'
+
+pg_host='10.26.10.22'
+pg_port='5432'
+
+pg_database='awx'
+pg_username='awx'
+pg_password='password3'
+
+rabbitmq_port=5672
+rabbitmq_vhost=tower
+rabbitmq_username=tower
+rabbitmq_password='password2'
+rabbitmq_cookie=cookiemonster
+
+# Needs to be true for fqdns and ip addresses
+rabbitmq_use_long_name=true
+```
+
+3.
+
+Run the Tower installer normally against your primary inventory:
+
+```
+./setup.sh -i inventory_pm
+```
+
+4.
+
+Run the playbook to ensure the samdoran.pgsql-replication roles is installed. `ansible-playbook tower_role_check.yml`.  If you don not have connectivity to github you'll need to download the tar archive and pass the path to the playbook, `ansible-playbook tower_role_check.yml -e replication_role_archive=ROLE_TGZ_ARCHIVE_LOCATION`
 
 4) Run the the playbook to setup replication to the local and/or remote databases `ansible-playbook -i inventory_pm tower_setup_replication.yml`.  You can check the status of replication by running `ansible-playbook -i inventory_pm tower_check_replication.yml`
 
