@@ -1,5 +1,5 @@
 Configure High Availability and/or Disaster Recovery on a Tower Cluster
-================================
+==
 
 **Reference Architecture**
 ![Ref Arch](readme_images/TowerClusterReferenceArch.png "Ref Arch")
@@ -217,58 +217,98 @@ Run the Tower installer normally against your primary inventory:
 
 4.
 
-Run the playbook to ensure the samdoran.pgsql-replication roles is installed. `ansible-playbook tower_role_check.yml`.  If you don not have connectivity to github you'll need to download the tar archive and pass the path to the playbook, `ansible-playbook tower_role_check.yml -e replication_role_archive=ROLE_TGZ_ARCHIVE_LOCATION`
+Run the the playbook to setup replication to the local and/or remote databases
 
-4) Run the the playbook to setup replication to the local and/or remote databases `ansible-playbook -i inventory_pm tower_setup_replication.yml`.  You can check the status of replication by running `ansible-playbook -i inventory_pm tower_check_replication.yml`
+ ```
+ ansible-playbook -i inventory_pm tower_setup_replication.yml
+ ```
 
-5) Run the script to prep the DR cluster for installation.  This will move the SECRET_KEY to the DR nodes. `./tower_dr_prep.sh -c inventory_pm -d inventory_dr`
+You can check the status of replication by running
+
+ ```
+ ansible-playbook -i inventory_pm tower_check_replication.yml
+ ```
+
+NOTE: if this a new deployment or there is no activity the replication latency
+check may indicate an error.
+
+5.
+
+Run the script to prep the DR cluster for installation.  This will move the SECRET_KEY to the DR nodes.
+
+```
+./tower_dr_prep.sh -c inventory_pm -d inventory_dr
+```
 
 You should now be ready to execute failover scenarios.
 
 **HA failover**
 
-NOTE: if you do not want to initialize replication back to the primary database and/or DR(remote) database you will need to remove them from the inventory. They can always be added later
+NOTE: if you do NOT want to initialize replication back to the primary database and/or DR(remote) database you will need to remove them from the inventory. They can always be added later
 
-To perform a HA failover, which will promote the HA/local replica database to primary and point Tower to it execute `./tower_pgsql_ha_failover.sh -c inventory_pm -a inventory_ha`
+To perform a HA failover, which will promote the HA/local replica database to primary and point Tower to it execute
 
-If the primary database has truly failed it can be redeployed/remediate/turned on and replication re-enabled so a "fail back" can occur but re-running `./tower_pgsql_ha_failover.sh -c inventory_pm -a inventory_ha`
+```
+./tower_pgsql_ha_failover.sh -c inventory_pm -a inventory_ha
+```
 
-One the primary database is fixe you can "fail back" to the original configuration by executing`./tower_pgsql_ha_failover.sh -c inventory_pm -a inventory_ha -b`.
+If the primary database has truly failed it can be redeployed/remediate/turned on and replication re-enabled so a "fail back" can occur but re-running
+
+```
+./tower_pgsql_ha_failover.sh -c inventory_pm -a inventory_ha
+```
+
+One the primary database is fixed you can "fail back" to the original configuration by executing
+
+```
+./tower_pgsql_ha_failover.sh -c inventory_pm -a inventory_ha -b
+```
 
 
 **DR failover**
 
-NOTE: if you do not want to initialize replication back to the primary database and/or HA(local) database you will need to remove them from the inventory.  They can always be added later
+NOTE: if you do not want to initialize replication back to the primary database  you will need to remove it from the inventory.
 
-To perform a DR failover which will promote the DR/remote replication database to primary, run the tower installer against the DR nodes/newly promoted DR database and remove previous primary nodes execute `./tower_dr_failover.sh -c inventory_pm -d inventory_dr`
+To perform a DR failover which will promote the DR/remote replication database to primary, run the tower installer against the DR nodes/newly promoted DR database and remove previous primary nodes execute
 
-Once the primary cluster is repaired you should re-run the failover to setup to enable replication. `./tower_dr_failover.sh -c inventory_pm -d inventory_dr`
+```
+./tower_dr_failover.sh -c inventory_pm -d inventory_dr
+```
 
-To "fail back" to the original configuration and primary cluster execute. `./tower_dr_failover.sh -c inventory_pm -d inventory_dr -b`
+Once the primary cluster is repaired you should re-run the failover to setup to enable replication.
 
+```
+./tower_dr_failover.sh -c inventory_pm -d inventory_dr
+```
 
+To "fail back" to the original configuration and primary cluster execute.
 
-**Backup and Restore**
-
-https://docs.ansible.com/ansible-tower/latest/html/administration/backup_restore.html#backup-and-restore-for-clustered-environments
+```
+./tower_dr_failover.sh -c inventory_pm -d inventory_dr -b
+```
 
 **Other failovers**
 
-If you want to do a DR failover from the HA failover configuration execute `./tower_dr_failover.sh -c inventory_ha -d inventory_dr`
+If you want to do a DR failover from the HA failover configuration execute
+
+```
+./tower_dr_failover.sh -c inventory_ha -d inventory_dr
+```
 
 **Why are you using bash scripts?**
 
 Because people make mistakes when there are too many manual steps.  The shell scripts are simple, only run ansible scripts and can easily be teased apart into the individual playbook runs.
 
 
+**Backup and Restore**
 
-Ansible Tower Clustering/High Availability and Disaster Recover
-===============================================================
+[Ansible Tower Backup and Restore Documentation](https://docs.ansible.com/ansible-tower/latest/html/administration/backup_restore.html#backup-and-restore-for-clustered-environments)
 
+![Backup and Restore Diagram](readme_images/BackupRestore.png "Backup and Restore")
 
 **Clustering**
 
-In addition to the base single node installation, Tower offers [clustered configurations](https://docs.ansible.com/ansible-tower/3.2.4/html/administration/clustering.html) to allow users to horizontally scale job capacity (forks) on nodes.  It is recommended to deploy tower nodes in odd numbers to prevent issues with underlying RabbitMQ clustering.
+In addition to the base single node installation, Tower offers [clustered configurations](https://docs.ansible.com/ansible-tower/latest/html/administration/clustering.html) to allow users to horizontally scale job capacity (forks) on nodes.  It is recommended to deploy tower nodes in odd numbers to prevent issues with underlying RabbitMQ clustering.
 
 Tower clustering minimizes the potential of job execution service outages by distributing jobs across the cluster.
 For example, if you have an Ansible Tower installation with a three node cluster configuration and the Ansible Tower services on a node become unavailable in the cluster, jobs will continue to be executed on the remaining two nodes.  It should be noted, the failed Ansible Tower node needs to remediated to return to a supported configuration containing an odd number of nodes.  See [setup considerations] (https://docs.ansible.com/ansible-tower/latest/html/administration/clustering.html#setup-considerations)
