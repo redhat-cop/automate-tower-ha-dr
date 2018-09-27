@@ -26,7 +26,7 @@
   file: path=/etc/tower/conf.d state=directory owner=root group={{aw_group}} mode=0750
 
 - name: configure tower log directory
-  file: path=/var/log/tower state=directory owner={{aw_user}} group={{aw_group}} mode=0755
+  file: path=/var/log/tower state=directory owner={{aw_user}} group={{aw_group}} mode=0750
 
 # When running with an external database, we need to remove 'postgresql' from
 # the list of tower managed services.
@@ -133,28 +133,6 @@
   with_items: "{{group_names}}"
   when: item | match("(^tower|^instance_group_.+)$")
 
-- name: Initialize controlling queues
-  set_fact:
-    rabbitmq_controlling_queues: []
-
-- name: Determine isolated queues that this host controls
-  set_fact:
-    rabbitmq_controlling_queues: "{{ rabbitmq_controlling_queues }} + [ '{{ item|regex_replace('^isolated_group_','') }}' ]"
-  with_items: "{{ groups }}"
-  when:
-    - item | match("(^isolated_group_.+)$")
-    - "'instance_group_' + hostvars[groups[item][0]]['controller'] in group_names or hostvars[groups[item][0]]['controller'] in group_names"
-
-- name: Initial routeable groups for all hosts
-  set_fact:
-    all_tower_queues: []
-
-- name: Determine all routeable groups
-  set_fact:
-    all_tower_queues: "{{ all_tower_queues }} + [ '{{ item|regex_replace('^instance_group_','') }}' ]"
-  with_items: "{{groups.keys()}}"
-  when: item | match("^instance_group_.+$")
-
 - name: Install Tower rabbitmq settings
   template:
     dest: /etc/tower/conf.d/rabbitmq.py
@@ -205,7 +183,7 @@
   delay: 2
 
 - name: Migrate the Tower database schema (may take awhile when upgrading).
-  command: awx-manage migrate --noinput --fake-initial
+  command: awx-manage migrate --noinput
   become_user: '{{ aw_user }}'
   become: True
   register: tower_migrate
@@ -291,7 +269,7 @@
     owner: '{{aw_user}}'
     group: '{{aw_group}}'
     recurse: true
-    mode: 'u=rwX,g=rX,o=r'
+    mode: 'u=rwX,g=rX,o-rwx'
 
 - name: Get configuration files to set permissions on
   shell: ls /etc/tower/conf.d/*.py
@@ -310,7 +288,7 @@
   with_items: "{{ configuration_files.stdout_lines }} + ['/etc/tower/settings.py']"
 
 - name: Check for Tower Super users
-  shell: echo "from django.contrib.auth.models import User; nsu = User.objects.filter(is_superuser=True).count(); exit(0 if nsu > 0 else 1)" | awx-manage shell
+  shell: echo "from django.contrib.auth.models import User; nsu = list(n.username for n in User.objects.filter(is_superuser=True)); print '\n'.join(nsu) ; exit(0 if len(nsu) > 0 else 1)" | awx-manage shell
   register: super_check
   become_user: '{{ aw_user }}'
   become: True
@@ -332,7 +310,7 @@
   no_log: True
   register: result
   changed_when: "'Password updated' in result.stdout"
-  when: awx_install_admin_password != '' and inventory_hostname == groups['tower'][0]
+  when: awx_install_admin_password != '' and inventory_hostname == groups['tower'][0] and admin_username in super_check.stdout_lines
 
 - name: Collect static files for Tower.
   command: awx-manage collectstatic --noinput --clear -v0
@@ -350,4 +328,4 @@
     owner: '{{aw_user}}'
     group: '{{aw_group}}'
     recurse: true
-    mode: 'u=rwX,g=rX,o=r'
+    mode: 'u=rwX,g=rX,o-rwx'

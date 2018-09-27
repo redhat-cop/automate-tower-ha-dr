@@ -31,3 +31,6 @@ el_obsolete:
 
 packages_el_install_tower: true
 packages_el_install_postgres: false
+
+packages_el_rabbitmq_version: '3.7.4'
+packages_el_erlang_version: '20.3.8.2'

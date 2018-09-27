@@ -32,10 +32,18 @@ gpgcheck=1
 gpgkey=file:///etc/pki/rpm-gpg/RPM-GPG-KEY-PGDG-96
 cost=10
 
-[jlaska-rabbitmq]
-name=RabbitMQ $releasever - $basearch
-baseurl=file://{{ bundle_install_folder }}/jlaska-rabbitmq
-enabled=1
+[rabbitmq_rabbitmq-server]
+name=rabbitmq_rabbitmq-server
+baseurl=file://{{ bundle_install_folder }}/rabbitmq_rabbitmq-server
 gpgcheck=1
-gpgkey=file:///etc/pki/rpm-gpg/RPM-GPG-KEY-jlaska-rabbitmq
+enabled=1
+gpgkey=file:///etc/pki/rpm-gpg/RPM-GPG-KEY-rabbitmq
+cost=10
+
+[rabbitmq_erlang]
+name=rabbitmq_erlang
+baseurl=file://{{ bundle_install_folder }}/rabbitmq_erlang
+gpgcheck=1
+enabled=1
+gpgkey=file:///etc/pki/rpm-gpg/RPM-GPG-KEY-rabbitmq
 cost=10

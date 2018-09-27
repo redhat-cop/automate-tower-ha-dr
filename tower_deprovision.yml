@@ -19,6 +19,7 @@
       password: "{{ tower_api_password }}"
       validate_certs: False
       status_code: [ 200, 201 ]
+      force_basic_auth: yes
     register: instance_groups
     changed_when: False
 
@@ -30,6 +31,7 @@
       password: "{{ tower_api_password }}"
       validate_certs: False
       status_code: [ 200, 201 ]
+      force_basic_auth: yes
     register: response
     changed_when: False
     with_items: "{{ instance_groups.json.results }}"

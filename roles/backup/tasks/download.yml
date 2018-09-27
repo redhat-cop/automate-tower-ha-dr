@@ -16,6 +16,7 @@
   file:
     path: '{{ backup_dest.rstrip("/") }}/{{ now }}'
     state: directory
+    owner: '{{ ansible_user }}'
   become: false
   run_once: true
   delegate_to: localhost

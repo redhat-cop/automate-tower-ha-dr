@@ -1,12 +1,11 @@
 [tower]
-towervm2 ansible_ssh_host="10.26.10.51"
+towervm2 ansible_host="10.26.10.51"
 
 [database]
-towerdb3 ansible_ssh_host="10.26.10.22"
+towerdb3 ansible_host="10.26.10.22"
 
 [database_replica]
-towerdb1 ansible_ssh_host="10.26.10.20" pgsqlrep_type=remote
-#towerdb2 ansible_ssh_host="10.26.10.21"
+towerdb1 ansible_host="10.26.10.20" pgsqlrep_type=remote
 
 [database_all:children]
 database
@@ -16,6 +15,14 @@ database_replica
 pgsqlrep_password=password4
 
 [all:vars]
+
+#BEGIN TOWER 3.3 nightly build
+aw_repo_url="http://nightlies.testing.ansible.com/ansible-tower_nightlies_m8u16fz56qr6q7/release_3.3.0"
+gpgcheck=0
+required_ram=0
+tower_migration_skip=1
+#END TOWER 3.3
+
 ansible_become = true
 ansible_user = 'vagrant'
 ansible_private_key_file="/mnt/mp-storage-archive/cloud/insecure_private_key"

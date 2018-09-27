@@ -1,0 +1,4 @@
+aw_repo_url: http://nightlies.testing.ansible.com/ansible-tower_nightlies_m8u16fz56qr6q7/release_3.3.0
+gpgcheck: 0
+required_ram: 0
+tower_migration_skip: 1

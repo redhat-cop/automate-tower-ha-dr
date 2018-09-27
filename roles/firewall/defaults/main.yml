@@ -13,3 +13,5 @@ tower_cluster_management_ports:
 
 database_firewall_ports:
   - "{{ pg_port }}"
+
+tower_firewalld_zone: public

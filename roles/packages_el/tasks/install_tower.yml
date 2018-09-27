@@ -17,6 +17,16 @@
   command: 'mv {{ awx_install_home }}/public/static/local_settings.json {{ awx_install_home }}'
   when: ui_config.stat.exists
 
+- name: Pre-install Erlang
+  yum:
+    name: "erlang-{{ packages_el_erlang_version }}"
+    state: installed
+
+- name: Pre-install RabbitMQ
+  yum:
+    name: "rabbitmq-server-{{ packages_el_rabbitmq_version }}"
+    state: installed
+
 - name: Install the Tower RPM.
   yum:
     name: '{{tower_package_rpm}}'
@@ -30,4 +40,3 @@
     name: ansible
     state: latest
   when: upgrade_ansible_with_tower
-
