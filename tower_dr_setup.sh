@@ -32,7 +32,7 @@ Usage: $0 [Options]
 
 Options:
   -c CURRENT_INVENTORY_FILE     Path to ansible inventory file
-  -d DR_INVENTORY_FILE          Path to HA inventory file
+  -d DR_INVENTORY_FILE          Path to DR inventory file
   -b                    failback to original configuration
   -h                    Show this help message and exit
 
