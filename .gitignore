@@ -8,3 +8,4 @@ tower-backup*
 2020*
 .DS_Store
 .*
+extra_vars.yml
