@@ -22,7 +22,7 @@ HA Failback
 
 *Disaster Recovery*
 
-Ansible Tower clusters are not recommended to span datacenter boundaries due to latency and outages concerns.  In the event of a total datacenter failure Ansible Tower would become unavailable.  The Ansible Tower disaster recovery approach allows for failover to pre-provisioned resources in a secondary datacenter.  The database in the secondary datacenter configured as a warm standy/replica of the database in the primary datacenter.  During a failover, Ansible Tower is installed onto the pre-provisioned nodes and pointed to the replica database (promoted to primary)
+Ansible Tower clusters are not recommended to span datacenter boundaries due to latency and outage concerns.  In the event of a total datacenter failure Ansible Tower would become unavailable.  The Ansible Tower disaster recovery approach allows for failover to pre-provisioned resources in a secondary datacenter.  The database in the secondary datacenter configured as a warm standby/replica of the database in the primary datacenter.  During a failover, Ansible Tower is installed onto the pre-provisioned nodes and pointed to the replica database (promoted to primary)
 
 DR Failover
 ![DR Failover Diagram](readme_images/TowerDR_Failover.png "DR Failover")
@@ -47,13 +47,13 @@ DR Failback
 
 1.
 
-Clone this repository.  In its current state is has the online Ansible Tower 3.2.5 installer inside.
+Clone this repository.  In its current state is has the online Ansible Tower 3.3.1 installer inside.
 
 ```
 git clone ssh://git@gitlab.consulting.redhat.com:2222/towerrescue/ansible_tower_setup.git
 ```
 
-If you want to pull in the latest installer you should just overwrite the existing Tower installer files by executing something like.
+If you want to pull in the latest installer you should just overwrite the existing Tower installer files by executing something like.  The toolkit does not modify any of the base installer playbooks or scripts.
 
 ```
 #download latest tower installer
@@ -162,7 +162,7 @@ rabbitmq_use_long_name=true
 ```
 
 
-**inventor_dr (disaster recovery inventory)**
+**inventory_dr (disaster recovery inventory)**
 ```
 [tower]
 towervm4 ansible_host="10.26.10.60"

@@ -4,13 +4,10 @@ towervm2 ansible_ssh_host="10.26.10.51"
 [database]
 towerdb2 ansible_ssh_host="10.26.10.21"
 
-[isolated_group_iso2]
-toweriso2 ansible_ssh_host="10.26.10.61" controller=tower
-
 [all:vars]
 ansible_become = true
 ansible_user = 'vagrant'
-ansible_private_key_file="/mnt/mp-storage-archive/cloud/insecure_private_key"
+ansible_private_key_file="~/.vagrant.d/insecure_private_key"
 ansible_ssh_common_args='-o StrictHostKeyChecking=no'
 
 admin_password='password1'

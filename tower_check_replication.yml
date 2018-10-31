@@ -52,7 +52,7 @@
     register: master_db
     delegate_to: "{{ groups['tower'][0] }}"
     become: true
-    become_user: awx
+    #become_user: awx
     changed_when: false
 
   - name: check configured db for tower nodes

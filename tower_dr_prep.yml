@@ -83,11 +83,15 @@
     - name: encrypt the secret key
       command: "ansible-vault encrypt_string {{ secret_key.content | b64decode }}  --vault-password-file={{vault_pass_file}}"
       register: secret_key_encrypted
+      environment:
+        ANSIBLE_VERBOSITY: 0
+      become: false
 
     - name: secret_key_content
       copy:
         content: "secret_key: {{ secret_key_encrypted.stdout }}"
         dest: "{{ key_vault_file }}"
       delegate_to: localhost
+      become: false
 
     when: not tower_down.failed
