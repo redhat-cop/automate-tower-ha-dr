@@ -162,6 +162,8 @@
 - name: "Install Tower node(s)"
   hosts: tower:instance_group_*
   gather_facts: false
+  pre_tasks:
+    - set_fact: cluster_host="{{ rabbitmq_host|default(ansible_host) }}"
   roles:
     - role: packages_el
       tags: packages
@@ -196,7 +198,7 @@
 
     - role: rabbitmq
       tags: rabbitmq
-      rabbitmq_env_host: "{{ rabbitmq_host|default(ansible_host) }}"
+      rabbitmq_env_host: "{{ cluster_host }}"
 
     - role: memcached
       tags: memcached
@@ -213,19 +215,19 @@
       awx_install_pg_init_name: "{{ postgres_init_name }}"
       awx_install_supervisor_init_name: "{{ sup_init_name }}"
       awx_install_supervisor_socket_location: "{{ sup_socket_location }}"
-      rabbitmq_awx_install_host: "{{ rabbitmq_host|default(ansible_host) }}"
+      rabbitmq_awx_install_host: "{{ cluster_host }}"
 
     - role: supervisor
       tags: supervisor
-      local_queue: "{{ rabbitmq_host|default(ansible_host) }}"
-      rabbitmq_supervisord_host: "{{ rabbitmq_host|default(ansible_host) }}"
+      local_queue: "{{ cluster_host }}"
+      rabbitmq_supervisord_host: "{{ cluster_host }}"
 
     - role: nginx
       tags: nginx
 
     - role: misc
       tags: misc
-      cluster_host_identifier: "{{ rabbitmq_host|default(ansible_host) }}"
+      cluster_host_identifier: "{{ cluster_host }}"
 
 - name: "Install Tower isolated node(s)"
   hosts: isolated_group_*

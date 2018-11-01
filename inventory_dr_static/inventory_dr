@@ -4,8 +4,18 @@ towervm2 ansible_ssh_host="10.26.10.51"
 [database]
 towerdb2 ansible_ssh_host="10.26.10.21"
 
+[database_replica]
+towerdb1 ansible_host="10.26.10.20" pgsqlrep_type=remote
+
+[database_all:children]
+database
+database_replica
+
+[database_all:vars]
+pgsqlrep_password=password4
+
 [all:vars]
-ansible_become = true
+#ansible_become = true
 ansible_user = 'vagrant'
 ansible_private_key_file="~/.vagrant.d/insecure_private_key"
 ansible_ssh_common_args='-o StrictHostKeyChecking=no'

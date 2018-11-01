@@ -1,5 +1,4 @@
 ---
-
 - name: If Ansible does not provide a system UUID, get a random one.
   shell: "echo 'import uuid; print(uuid.uuid4())' | python"
   register: system_uuid
@@ -23,15 +22,11 @@
   register: provision_instance
   changed_when: "'changed: True' in provision_instance.stdout"
 
-- name: set fact for cluster identifier
-  set_fact:
-    cluster_host_identifier: "{{cluster_host_identifier}}"
-
 - name: Register tower instance groups.
   shell: >
-     awx-manage register_queue
-     --queuename="{{ item|regex_replace('^instance_group_','') }}"
-     --hostnames="{{ ','.join(groups[item] | map('extract', hostvars, 'cluster_host_identifier') ) }}"
+      awx-manage register_queue
+      --queuename="{{ item|regex_replace('^instance_group_','') }}"
+      --hostnames="{{ ','.join(groups[item] | map('extract', hostvars, 'cluster_host') | list | select('defined'))  }}"
   args:
     executable: /bin/bash
   become_user: '{{ aw_user }}'

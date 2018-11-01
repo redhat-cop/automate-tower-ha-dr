@@ -1,0 +1,11 @@
+---
+- name: Create a directory for custom virtual environments
+  file:
+    path: '{{ backup_dir.rstrip("/") }}/{{ now }}/venv/'
+    group: root
+    mode: 0755
+    owner: root
+    state: directory
+
+- name: Copy virtual environments directories from tower
+  shell: rsync --exclude=/awx --exclude=/ansible -auq {{ backup_awx_home }}/venv/ {{ backup_dir.rstrip("/") }}/{{ now }}/venv/

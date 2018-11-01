@@ -1,0 +1,12 @@
+---
+- name: Ensure that tower virtual environment directory exists.
+  file:
+    group: "root"
+    mode: 0755
+    owner: "root"
+    path: "{{ restore_awx_home }}/venv"
+    state: directory
+
+- name: Restore virtual environments
+  shell: rsync -aq {{ backup_dir.rstrip("/") }}/restore/venv/ {{restore_awx_home}}/venv/
+  when: has_host_archive

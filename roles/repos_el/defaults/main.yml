@@ -1,8 +1,7 @@
 ---
 # Ansible repository location. This should be the
 # root of the repo, and does not include the /deb or /rpm path
-#aw_repo_url: "http://releases.ansible.com/ansible-tower"
-aw_repo_url: "http://nightlies.testing.ansible.com/ansible-tower_nightlies_m8u16fz56qr6q7/release_3.3.0"
+aw_repo_url: "http://releases.ansible.com/ansible-tower"
 
 # Indicate the path to the AWS RHUI repository file
 redhat_aws_rhui_repo_path: '/etc/yum.repos.d/redhat-rhui.repo'
@@ -45,3 +44,4 @@ bundle_install_folder: "/var/lib/tower-bundle"
 # Pre-defined dynamically determined variables to satisfy ansible 1.9 and ansible 2.0 deprecation warnings
 yum_online_repo_files: []
 yum_repo_keys: []
+

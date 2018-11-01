@@ -9,7 +9,7 @@
 # -------------
 
 # Cause exit codes to trickle through piping.
-set -o pipefail
+set -eo pipefail
 
 # When using an interactive shell, force colorized output from Ansible.
 if [ -t "0" ]; then

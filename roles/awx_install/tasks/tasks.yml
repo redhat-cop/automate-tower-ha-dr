@@ -288,7 +288,7 @@
   with_items: "{{ configuration_files.stdout_lines }} + ['/etc/tower/settings.py']"
 
 - name: Check for Tower Super users
-  shell: echo "from django.contrib.auth.models import User; nsu = list(n.username for n in User.objects.filter(is_superuser=True)); print '\n'.join(nsu) ; exit(0 if len(nsu) > 0 else 1)" | awx-manage shell
+  shell: echo "from django.contrib.auth.models import User; nsu = User.objects.filter(is_superuser=True).count(); exit(0 if nsu > 0 else 1)" | awx-manage shell
   register: super_check
   become_user: '{{ aw_user }}'
   become: True
@@ -310,7 +310,7 @@
   no_log: True
   register: result
   changed_when: "'Password updated' in result.stdout"
-  when: awx_install_admin_password != '' and inventory_hostname == groups['tower'][0] and admin_username in super_check.stdout_lines
+  when: awx_install_admin_password != '' and inventory_hostname == groups['tower'][0]
 
 - name: Collect static files for Tower.
   command: awx-manage collectstatic --noinput --clear -v0

@@ -2,7 +2,7 @@
 
 - hosts: localhost
   gather_facts: no
-  become: true
+  become: false
   vars:
     key_vault_file: tower_secret_key_vault
     tower_delegate: "{{groups['tower'][0]}}"
@@ -21,7 +21,8 @@
     register: tower_down
     ignore_errors: yes
 
-  - block:
+  - name: block for logic around retrieving key from backup tarball
+    block:
 
     - debug:
         msg: "Tower node is inaccessible via Ansible. Attempting to use backup"
@@ -72,13 +73,15 @@
 
     when: tower_down.failed
 
-  - block:
+  - name: obtain key from tower node
+    block:
     - name: obtain secret key from tower node
       slurp:
         src: /etc/tower/SECRET_KEY
       register: secret_key
       ignore_errors: yes
       delegate_to: "{{ groups['tower'][0]}}"
+      become: true
 
     - name: encrypt the secret key
       command: "ansible-vault encrypt_string {{ secret_key.content | b64decode }}  --vault-password-file={{vault_pass_file}}"
@@ -92,6 +95,5 @@
         content: "secret_key: {{ secret_key_encrypted.stdout }}"
         dest: "{{ key_vault_file }}"
       delegate_to: localhost
-      become: false
 
     when: not tower_down.failed
