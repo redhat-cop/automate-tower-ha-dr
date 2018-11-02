@@ -140,6 +140,10 @@ echo "START TOWER SERVICE"
 ansible-playbook -i "${DR_INVENTORY_FILE}" -v \
                 tower_start_services.yml 2>&1 | tee $TEMP_LOG_FILE
 
+echo "REMOVE FAILED NODES FROM PREVIOUS CLUSTER"
+ansible-playbook -i "${DR_INVENTORY_FILE}" -v \
+                tower_deprovision.yml 2>&1 | tee $TEMP_LOG_FILE
+
 echo "SETUP REPLICATION"
 ansible-playbook -i "${DR_INVENTORY_FILE}" -v \
                 tower_setup_replication.yml -e pgsqlrep_install_skip=${pgsqlrep_install_skip}  2>&1 | tee $TEMP_LOG_FILE

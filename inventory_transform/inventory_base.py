@@ -8,6 +8,9 @@ import argparse
 ANS_INV_CMD = "ansible-inventory"
 ANS_INV_ARGS = ["--list", "--export"]
 
+import logging
+
+
 
 # swap replica and master database
 def _replica_to_master(inv):
@@ -43,7 +46,7 @@ def _get_inventory(inv_file):
 
 
 def generate(replica_to_master=False, dr_to_primary=False, inventory_file='inventory'):
-
+    logging.warn("here")
     inv = _get_inventory(inventory_file)
     if replica_to_master:
         _replica_to_master(inv)
@@ -61,7 +64,11 @@ def generate(replica_to_master=False, dr_to_primary=False, inventory_file='inven
 
 
 if __name__ == '__main__':
+
     parser = argparse.ArgumentParser()
+
+    parser.add_argument('--list', action="store_true",
+                    help="basic ansible inventory")
 
     parser.add_argument('--replica-to-master', action="store_true",
                     help="Swap master and replica.")
@@ -70,7 +77,7 @@ if __name__ == '__main__':
                     help="Swap tower and tower_dr hosts")
 
     parser.add_argument('--inventory-file', action="store",
-                    help="Inventory file", default="./inventory")
+                    help="Inventory file", default="./inventory_dr_static/inventory_pm")
 
     args = parser.parse_args()
 

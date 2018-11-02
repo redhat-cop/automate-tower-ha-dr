@@ -16,12 +16,6 @@
     - name: get instance groups (excluding isolated)
       uri:
         url: "{{ tower_api_base }}/api/v2/instance_groups?controller=null"
-        method: GET
-        user: "{{ tower_api_user }}"
-        password: "{{ tower_api_password }}"
-        validate_certs: False
-        status_code: [ 200, 201 ]
-        force_basic_auth: yes
       register: instance_groups
       become: false
       changed_when: False
@@ -29,12 +23,6 @@
     - name: get instance group instances
       uri:
         url: "{{ tower_api_base }}{{ item['related']['instances'] }}"
-        method: GET
-        user: "{{ tower_api_user }}"
-        password: "{{ tower_api_password }}"
-        validate_certs: False
-        status_code: [ 200, 201 ]
-        force_basic_auth: yes
       register: response
       changed_when: False
       with_items: "{{ instance_groups.json.results }}"
@@ -64,3 +52,11 @@
       when: not ansible_check_mode
 
     check_mode: no
+    module_defaults:
+      uri:
+        method: GET
+        user: "{{ tower_api_user }}"
+        password: "{{ tower_api_password }}"
+        validate_certs: False
+        status_code: [ 200, 201 ]
+        force_basic_auth: yes
