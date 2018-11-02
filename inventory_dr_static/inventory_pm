@@ -5,7 +5,7 @@ towervm1 ansible_ssh_host="10.26.10.50"
 towerdb1 ansible_ssh_host="10.26.10.20"
 
 [database_replica]
-towerdb2XXX ansible_host="10.26.10.21" pgsqlrep_type=remote
+towerdb2 ansible_host="10.26.10.21" pgsqlrep_type=remote
 
 [database_all:children]
 database
