@@ -1,0 +1,10 @@
+---
+
+- hosts: localhost
+  tasks:
+  - debug: msg="{{ groups }}"
+  - pause:
+  - meta: refresh_inventory
+    environment:
+      foo: 1
+  - debug: msg="{{ groups }}"
