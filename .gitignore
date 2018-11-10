@@ -10,3 +10,4 @@ tower-backup*
 .*
 extra_vars.yml
 tower_installer/
+*.retry

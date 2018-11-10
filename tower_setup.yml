@@ -1,0 +1,15 @@
+---
+
+- hosts: localhost
+  tasks:
+  - debug: var=tower_installer
+  - set_fact:
+      tower_inv: "{{ ansible_inventory_sources | first }}"
+  - stat:
+       path: "tower_installer/{{tower_installer}}"
+
+  - command: "./setup.sh -i {{ tower_inv }}"
+    args:
+      chdir: "tower_installer/{{tower_installer}}"
+    environment:
+      ANSIBLE_SUDO: True
