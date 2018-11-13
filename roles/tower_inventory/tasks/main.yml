@@ -17,7 +17,7 @@
   - debug:
       msg: "setting inventory to {{tower_inventory_file}}"
 
-  - name: "populate inventory ini with {{tower_inventory_pm}}"
+  - name: "populate inventory ini with {{tower_inventory_file}}"
     copy:
       content: "{{tower_inventory_file}}"
       dest: "{{ tower_inventory_ini }}"

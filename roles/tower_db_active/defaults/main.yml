@@ -1,0 +1,3 @@
+---
+
+tower_db_active_host: "{{groups['database'][0]}}"

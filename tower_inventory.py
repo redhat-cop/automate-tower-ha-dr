@@ -10,29 +10,6 @@ import yaml
 ANS_INV_CMD = "ansible-inventory"
 ANS_INV_ARGS = ["--list", "--export"]
 
-# swap replica and master database
-def _replica_to_master(inv):
-
-    inv["database"]["hosts"], inv["database_replica"]["hosts"] = \
-      inv["database_replica"]["hosts"], inv["database"]["hosts"]
-
-    db = inv["database"]["hosts"][0]
-    # determine if inventory hostname is used for connectivity
-    if 'ansible_ssh_host' in inv["_meta"]["hostvars"][db]:
-        db_host = inv["_meta"]["hostvars"][db]['ansible_ssh_host']
-    else:
-        db_host = db
-
-    for h in inv["_meta"]["hostvars"].values():
-        h["pg_host"] = db_host
-
-
-# swap dr and primary hoss
-def _dr_to_primary(inv):
-
-    inv["tower"]["hosts"], inv["tower_dr"]["hosts"] = \
-      inv["tower_dr"]["hosts"], inv["tower"]["hosts"]
-
 
 def _get_inventory(inv_file):
 
@@ -40,16 +17,7 @@ def _get_inventory(inv_file):
         raise Exception("Inventory file does not exist")
 
     inv_cmd = [ANS_INV_CMD] + ["-i", inv_file] + ANS_INV_ARGS
-    return json.loads(subprocess.check_output(inv_cmd))
-
-
-def generate(replica_to_master=False, dr_to_primary=False, inventory_file='inventory'):
-
-    inv = _get_inventory(inventory_file)
-    if replica_to_master:
-        _replica_to_master(inv)
-    if dr_to_primary:
-        _dr_to_primary(inv)
+    inv = json.loads(subprocess.check_output(inv_cmd))
 
     # cleanup using ansible-inventory twice
     try:
@@ -68,22 +36,25 @@ if __name__ == '__main__':
     parser.add_argument('--list', action="store_true",
                     help="basic ansible inventory")
 
-    parser.add_argument('--replica-to-master', action="store_true",
-                    help="Swap master and replica.")
-
-    parser.add_argument('--dr-to-primary', action="store_true",
-                    help="Swap tower and tower_dr hosts")
-
-    # parser.add_argument('--inventory-file', action="store",
-    #                    help="Inventory file", default="./inventory_dr_static/inventory_pm")
+    parser.add_argument('--host', action="store",
+                    help="basic ansible inventory")
 
     args = parser.parse_args()
-
-    tower_inventory = {}
 
     if os.path.exists("vars_tower.yml"):
         with open("vars_tower.yml") as tv:
             tower_inventory = yaml.load(tv.read())
+    else:
+        raise Exception("vars_tower.yml must be present & well-formed with inventory names")
+
+    if not os.path.exists(tower_inventory.get("tower_inventory_pm", "EOF")):
+
+        raise Exception("vars_tower.yml must contain a tower_inventory_pm file")
+
+    if not os.path.exists(tower_inventory.get("tower_inventory_dr", "EOF")) and \
+       not os.path.exists(tower_inventory.get("tower_inventory_ha", "EOF")):
+
+        raise Exception("vars_tower.yml must contain a tower_inventory_dr or tower_inventory_ha file")
 
     if not os.path.exists('.tower_inventory.ini'):
         if tower_inventory:
@@ -91,7 +62,9 @@ if __name__ == '__main__':
     else:
         with open('.tower_inventory.ini') as fh:
             inventory_file = fh.read()
+            inventory_file = inventory_file.strip()
 
-        inventory_file = inventory_file.strip()
+    if inventory_file not in [ v for k, v in tower_inventory.iteritems() if k.startswith("tower_inventory_") ]:
+        raise Exception(".tower_inventory.ini does not contain a valid inventory.  Found " + inventory_file)
 
-    print generate(args.replica_to_master, args.dr_to_primary, inventory_file)
+    print _get_inventory(inventory_file)

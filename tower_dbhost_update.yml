@@ -6,7 +6,6 @@
   vars:
     dbhost: "{{groups['database'][0]}}"
   tasks:
-  - debug: msg="{{dbhost | infer_address(hostvars)}}"
   - name: Update Tower postgres.py
     lineinfile:
       dest: /etc/tower/conf.d/postgres.py
