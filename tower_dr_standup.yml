@@ -106,3 +106,7 @@
     - file:
         path: /var/log/tower
         state: absent
+
+- import_playbook: tower_setup_replication.yml
+
+- import_playbook: tower_check_replication.yml
