@@ -1,6 +1,0 @@
----
-nginx_awx_home: '/var/lib/awx'
-nginx_exec_vars_only: false
-nginx_disable_https: "{{ disable_https|default(false) }}"
-nginx_http_port: "{{ http_port|default(80) }}"
-nginx_https_port: "{{ https_port|default(443) }}"

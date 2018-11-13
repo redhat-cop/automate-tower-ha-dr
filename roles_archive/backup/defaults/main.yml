@@ -1,6 +1,0 @@
----
-backup_awx_home: '/var/lib/awx'
-backup_dir: /var/backups/tower/
-backup_dest: "{{ playbook_dir }}/"
-aw_user: awx
-aw_group: awx

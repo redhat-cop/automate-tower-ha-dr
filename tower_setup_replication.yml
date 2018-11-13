@@ -2,7 +2,6 @@
 
 - name: set facts for pgsql-replication role and preflight check
   hosts: database*
-  tags: dbfacts
   vars:
     pgsqlrep_type_list: [ 'local', 'remote' ]
   tasks:
@@ -56,6 +55,7 @@
 - name: Configure PostgreSQL streaming replication
   hosts: database_replica
   become: true
+  vars_files: vars_tower.yml
   tasks:
   - include_role:
       name: postgres_base

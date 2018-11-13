@@ -1,15 +1,55 @@
 ---
 
 - hosts: localhost
+  connection: local
+  vars_files: vars_tower.yml
   tasks:
-  - debug: var=tower_installer
-  - set_fact:
-      tower_inv: "{{ ansible_inventory_sources | first }}"
-  - stat:
-       path: "tower_installer/{{tower_installer}}"
 
-  - command: "./setup.sh -i {{ tower_inv }}"
+  - name: offline install
+    block:
+    - name: ensure installer already exists
+      stat:
+        path: "{{ tower_installer_dir }}/{{ tower_artifact }}"
+      register: artifact_status
+      failed_when: not artifact_status.stat.exists
+    when: tower_disconnected | bool
+
+  - name: online install
+    block:
+    - name: ensure installer directory is present
+      file:
+        path: "{{ tower_installer_dir }}"
+        state: directory
+
+    - name: download tower installer
+      get_url:
+        url: "{{ tower_download_url }}"
+        dest: "{{ tower_installer_dir }}/{{ tower_artifact }}"
+        mode: 0644
+        #force: yes
+    when: not tower_disconnected | bool
+
+  - name: extract installer
+    command: "tar xzf {{ tower_artifact }}"
     args:
-      chdir: "tower_installer/{{tower_installer}}"
+      chdir: "{{ tower_installer_dir }}"
+    #unarchive:
+    #  src: "{{ tower_installer_dir }}/{{ tower_artifact }}"
+    #  dest: "{{ tower_installer_dir }}/"
+    #  remote_src: yes
+    #  creates: "{{ tower_installer_current }}"
+
+  - name: run tower installer for version {{ tower_version }}
+    command: "./setup.sh -i {{ ansible_inventory_sources[0] }} -e required_ram=0"
+    args:
+      chdir: "{{ tower_installer_current }}"
     environment:
       ANSIBLE_SUDO: True
+    register: tower_install_status
+    ignore_errors: yes
+    when: not tower_install_skip | default(false) | bool
+
+  - name: fail with message
+    fail:
+      msg: "Tower installation failed.  Please check {{ tower_installer_current }}/setup.log"
+    when: "'skipped' not in tower_install_status and tower_install_status.failed"

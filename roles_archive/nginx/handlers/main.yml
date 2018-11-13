@@ -1,7 +1,0 @@
----
-# Handlers for common notifications.
-
-- name: restart nginx
-  service:
-    name: "{{ nginx_init_name }}"
-    state: restarted

@@ -1,8 +1,0 @@
-# Ansible Tower settings for celeryd.
-CELERY_BROKER_URL = 'amqp://{{ rabbitmq_username }}:{{ rabbitmq_password }}@{{ rabbitmq_awx_install_host }}:{{ rabbitmq_port|default('5672') }}/{{ rabbitmq_vhost|default('tower') }}'
-
-CHANNEL_LAYERS = {
-    'default': {'BACKEND': 'asgi_amqp.AMQPChannelLayer',
-                'ROUTING': 'awx.main.routing.channel_routing',
-                'CONFIG': {'url': CELERY_BROKER_URL}}
-}

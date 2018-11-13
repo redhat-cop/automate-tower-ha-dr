@@ -1,9 +1,0 @@
----
-restore_awx_home: '/var/lib/awx'
-backup_dir: /var/backups/tower/
-restore_database: 'internal'
-pg_database: awx
-restore_backup_file: "./tower-backup-latest.tar.gz"
-web_service_name: nginx
-aw_user: awx
-aw_group: awx

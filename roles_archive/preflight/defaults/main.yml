@@ -1,6 +1,0 @@
----
-required_ram: 1750
-preflight_awx_home: '/var/lib/awx'
-preflight_awx_user: 'awx'
-min_open_fds: 4096
-minimum_ansible_version: '2.3'
