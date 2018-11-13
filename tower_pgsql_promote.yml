@@ -10,12 +10,15 @@
        msg: "promotion_type must be passed as an extra var with 'local' or 'remote'"
     when: promotion_type is not defined or promotion_type not in pgsqlrep_type_list
 
+  - set_fact:
+      _target: "{{ 'target' if pgsqlrep_type == promotion_type else 'other' }}"
+
   - name: set up group based on passed parameter
     group_by:
-      key: promotion_{{pgsqlrep_type}}
+      key: promotion_{{_target}}
 
 - name: Promote secondary database to primary
-  hosts: "promotion_{{ promotion_type }}"
+  hosts: "promotion_target"
   become: true
   tasks:
     - name: Get the current PostgreSQL version
