@@ -11,12 +11,14 @@
 
 - import_playbook: tower_stop_services.yml
 
+# when there is no replica, no action will be taken
 - name: Set fact to indicate remove failover. Required b.c using playbook import
   hosts: database_replica
   tasks:
   - set_fact:
       promotion_type: "remote"
 
+# when there is no replica, no action will be taken
 - import_playbook: tower_pgsql_promote.yml
 
 - name: setup inventory for dr site or primary site in failback and rerun tower installer
