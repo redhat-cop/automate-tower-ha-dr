@@ -12,3 +12,4 @@ extra_vars.yml
 tower_installer/
 *.retry
 .tower_inventory.ini
+.ftpconfig
