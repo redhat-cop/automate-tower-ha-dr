@@ -1,8 +1,0 @@
----
-- include: vars.yml
-- include: init.yml
-- include: projects.yml
-- include: job_stdout.yml
-- include: conf.yml
-- include: venv.yml
-- include: postgres.yml

@@ -1,0 +1,50 @@
+---
+
+- name: setup inventory for primary site or dr site in failback)
+  hosts: localhost
+  vars_files: vars_tower.yml
+  tasks:
+  - include_role:
+      name: tower_inventory
+    vars:
+      tower_inventory_file: "{{ tower_inventory_pm if tower_failback is not defined else tower_inventory_dr  }}"
+
+- import_playbook: tower_stop_services.yml
+
+- name: Set fact to indicate remove failover. Required b.c using playbook import
+  hosts: database_replica
+  tasks:
+  - set_fact:
+      promotion_type: "remote"
+
+- import_playbook: tower_pgsql_promote.yml
+
+- name: setup inventory for dr site or primary site in failback and rerun tower installer
+  hosts: localhost
+  vars_files: vars_tower.yml
+  tasks:
+  - include_role:
+      name: tower_inventory
+    vars:
+      tower_inventory_file: "{{ tower_inventory_dr if tower_failback is not defined else tower_inventory_pm  }}"
+
+  - name: "run tower installer for version {{ tower_version }} LOG: {{ tower_installer_current }}/setup.log"
+    command: "./setup.sh -i {{ playbook_dir }}/{{ tower_inventory_dr if tower_failback is not defined else tower_inventory_pm  }} -e required_ram=0"
+    args:
+      chdir: "{{ tower_installer_current }}"
+    environment:
+      ANSIBLE_SUDO: True
+    register: tower_install_status
+    ignore_errors: yes
+    when: not tower_install_skip | default(false) | bool
+
+  - name: fail with message
+    fail:
+      msg: "Tower installation failed.  Please check {{ tower_installer_current }}/setup.log"
+    when: "'skipped' not in tower_install_status and tower_install_status.failed"
+
+- import_playbook: tower_deprovision.yml
+
+- import_playbook: tower_setup_replication.yml
+
+- import_playbook: tower_check_replication.yml

@@ -5,5 +5,12 @@
   hosts: tower
   become: true
   tasks:
-    - name: Stop tower
-      command: ansible-tower-service stop
+  - wait_for_connection:
+      timeout: 10
+    register: tower_available
+    ignore_errors: yes
+
+  - name: Stop tower
+    command: ansible-tower-service stop
+    when: not tower_available.failed
+    

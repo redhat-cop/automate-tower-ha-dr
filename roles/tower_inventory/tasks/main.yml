@@ -1,0 +1,28 @@
+---
+
+- block:
+  - assert:
+      that: tower_inventory_file is defined
+      msg: tower_inventory_file must be passed
+
+  - name: check inventory file
+    stat:
+      path: "{{ tower_inventory_file }}"
+    register: tower_inventory_file_status
+
+  - fail:
+      msg: "{{ tower_inventory_file }} does not exist"
+    when: not tower_inventory_file_status.stat.exists
+
+  - debug:
+      msg: "setting inventory to {{tower_inventory_file}}"
+
+  - name: "populate inventory ini with {{tower_inventory_pm}}"
+    copy:
+      content: "{{tower_inventory_file}}"
+      dest: "{{ tower_inventory_ini }}"
+
+  - name: refresh_inventory
+    meta: refresh_inventory
+
+  delegate_to: localhost
