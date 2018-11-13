@@ -324,12 +324,8 @@ Ansible Tower utilizes PostgreSQL for application level data storage.  The Tower
 As discussed above, Ansible Tower clusters can not span multiple datacenters and the default setup configuration does not support m
 
 
-
-
-
-
 Ansible Tower Deployment
-========================
+==
 
 This collection of files provides a complete set of playbooks for deploying
 the Ansible Tower software to a single-server installation. It is also to
