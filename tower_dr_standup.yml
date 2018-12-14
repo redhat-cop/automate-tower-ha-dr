@@ -4,7 +4,6 @@
   gather_facts: no
   become: false
   vars:
-    tower_delegate: "{{groups['tower'][0]}}"
     tower_backup_file: tower-backup-latest.tar.gz
   vars_files: vars_tower.yml
   tasks:
@@ -14,68 +13,10 @@
     vars:
       tower_inventory_file: "{{ tower_inventory_pm }}"
 
-  - name: wait for connection to tower host
-    wait_for_connection:
-      delay: 0
-      timeout: 1
-    delegate_to: "{{ tower_delegate }}"
-    register: tower_down
-    ignore_errors: yes
-
-  - name: block for logic around retrieving key from backup tarball
-    block:
-
-    - debug:
-        msg: "Tower node is inaccessible via Ansible. Attempting to use backup"
-
-    - name: determine if backup file exists
-      stat:
-        path: "{{tower_backup_file}}"
-      register: tower_backup
-
-    - fail:
-        msg: "{{tower_backup_file}} does not exist. You can specify a backup file with -e tower_backup_file=BACKUP_TARBALL"
-      when: not tower_backup.stat.exists
-
-    - name: create a tmp directory for tower backup
-      tempfile:
-        state: directory
-      register: tower_backup_dir
-
-    - name: extract tower backup to temp directory {{ tower_backup_dir.path }}
-      unarchive:
-        src: "{{tower_backup_file}}"
-        dest: "{{tower_backup_dir.path}}"
-
-    - name: extract common.tgz file of backup
-      unarchive:
-        src: "{{tower_backup_dir.path}}/common.tar.gz"
-        dest: "{{tower_backup_dir.path}}"
-
-    - name: get content of SECRET_KEY file
-      slurp:
-        src: "{{tower_backup_dir.path}}/SECRET_KEY"
-      register: secret_key
-
-    - set_fact:
-        tower_secret_key: "{{ secret_key.content | b64decode }}"
-
-    when: tower_down.failed
-
-  - name: obtain key from tower node
-    block:
-    - name: obtain secret key from tower node
-      slurp:
-        src: /etc/tower/SECRET_KEY
-      register: secret_key
-      ignore_errors: yes
-      delegate_to: "{{ groups['tower'][0]}}"
-      become: true
-
-    - set_fact:
-        tower_secret_key: "{{ secret_key.content | b64decode }}"
-
-    when: not tower_down.failed
+  - include_role:
+      name: tower_secret_key
+    vars:
+      tower_secret_key_delegate: "{{groups['tower'][0]}}"
 
 - name: setup inventory ensuring dr/secondary site and deploy key to DR
   hosts: localhost
@@ -92,18 +33,21 @@
   become: true
   tasks:
 
-    - file:
+    - name: ensure tower configuration
+      file:
         state: directory
         path: /etc/tower
         mode: 0640
 
-    - copy:
+    - name: deploy secret to tower
+      copy:
         content: "{{hostvars['localhost'].tower_secret_key}}"
         dest: "/etc/tower/SECRET_KEY"
         mode: 0640
     # adding this because installer fails this was left behind
     # and awx user and group was removed
-    - file:
+    - name: remove extraneous tower log directory
+      file:
         path: /var/log/tower
         state: absent
 

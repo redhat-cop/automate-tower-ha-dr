@@ -51,7 +51,7 @@
       chdir: /etc/tower/conf.d
     register: master_db
     delegate_to: "{{ groups['tower'][0] }}"
-    become_user: awx
+    become_user: root
     changed_when: false
 
   - name: check configured db for tower nodes

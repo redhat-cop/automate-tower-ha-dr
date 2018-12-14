@@ -1,0 +1,4 @@
+---
+
+tower_secret_key_delegate: localhost
+tower_secret_key_backup_file: tower-backup-latest.tar.gz

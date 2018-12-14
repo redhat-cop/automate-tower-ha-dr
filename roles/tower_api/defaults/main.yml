@@ -1,0 +1,6 @@
+---
+
+tower_api_host: "{{ groups['tower'][0] }}"
+tower_api_password: "{{ hostvars[tower_host]['admin_password'] }}"
+tower_api_user: admin
+tower_api_protocol: "https"

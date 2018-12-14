@@ -13,4 +13,4 @@
   - name: Stop tower
     command: ansible-tower-service stop
     when: not tower_available.failed
-    
+    ignore_errors: yes
