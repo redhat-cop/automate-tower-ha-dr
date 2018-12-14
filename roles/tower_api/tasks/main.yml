@@ -1,0 +1,10 @@
+---
+
+- uri:
+    method: GET
+    user: "{{ tower_api_user }}"
+    password: "{{ tower_api_password }}"
+    validate_certs: False
+    status_code: [ 200, 201 ]
+    force_basic_auth: yes
+    url: ""

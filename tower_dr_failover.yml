@@ -1,57 +1,72 @@
 ---
 
-- name: setup inventory for primary site or dr site in failback)
+- name: set fact for for failback flag
+  hosts: all:localhost
+  gather_facts: no
+  pre_tasks:
+  - name: set a local fact as boolean
+    set_fact:
+      _tower_failback: "{{ tower_failback | default(False) | bool }}"
+
+- name: setup inventory to shutdown services
   hosts: localhost
+  gather_facts: no
   vars_files: vars_tower.yml
-  tasks:
-  - include_role:
-      name: tower_inventory
-    vars:
-      tower_inventory_file: "{{ tower_inventory_pm if tower_failback is not defined else tower_inventory_dr  }}"
+  roles:
+  - role: tower_inventory
+    tower_inventory_file: "{{ tower_inventory_dr if _tower_failback else tower_inventory_pm  }}"
 
 - import_playbook: tower_stop_services.yml
 
-# when there is no replica, no action will be taken
-- name: Set fact to indicate remove failover. Required b.c using playbook import
-  hosts: database_replica
-  tasks:
-  - set_fact:
-      promotion_type: "remote"
+- name: setup inventory for backup site or primary site in failback
+  hosts: localhost
+  vars_files: vars_tower.yml
+  gather_facts: no
+  roles:
+  - role: tower_inventory
+    tower_inventory_file: "{{ tower_inventory_pm if _tower_failback else tower_inventory_dr  }}"
 
 # when there is no replica, no action will be taken
 - import_playbook: tower_pgsql_promote.yml
 
 - name: setup inventory for dr site or primary site in failback and rerun tower installer
-  hosts: localhost
+  hosts: tower
   vars_files: vars_tower.yml
   tasks:
-  - include_role:
-      name: tower_inventory
-    vars:
-      tower_inventory_file: "{{ tower_inventory_dr if tower_failback is not defined else tower_inventory_pm  }}"
 
-  - name: "run tower installer for version {{ tower_version }} LOG: {{ tower_installer_current }}/setup.log"
-    command: "./setup.sh -i {{ playbook_dir }}/{{ tower_inventory_dr if tower_failback is not defined else tower_inventory_pm  }} -e required_ram=0"
-    args:
-      chdir: "{{ tower_installer_current }}"
-    environment:
-      ANSIBLE_SUDO: True
-    register: tower_install_status
-    ignore_errors: yes
+  - name: full installer run
+    block:
+    - name: "run tower installer for version {{ tower_version }} LOG: {{ tower_installer_current }}/setup.log INV: "
+      command: "./setup.sh -i {{ ansible_inventory_sources[0] }} -e required_ram=0"
+      args:
+        chdir: "{{ tower_installer_current }}"
+      environment:
+        ANSIBLE_SUDO: True
+      register: tower_install_status
+      ignore_errors: yes
+
+    - name: fail with message
+      fail:
+        msg: "Tower installation failed.  Please check {{ tower_installer_current }}/setup.log"
+      when: "'skipped' not in tower_install_status and tower_install_status.failed"
+
+    delegate_to: localhost
+    run_once: true
     when: not tower_install_skip | default(false) | bool and
           not tower_install_test | default(false) | bool
 
-  - name: fail with message
-    fail:
-      msg: "Tower installation failed.  Please check {{ tower_installer_current }}/setup.log"
-    when: "'skipped' not in tower_install_status and tower_install_status.failed"
+  - name: shortcut/engineering cluster failover
+    block:
+    - name: test/engineering db update
+      include_role:
+        name: tower_db_active
 
-- name: test/engineering db update
-  hosts: tower
-  become: true
-  roles:
-  - role: tower_db_active
+    - name: rabbitmq and cluster setup
+      include_role:
+        name: tower_cluster
+
     when: tower_install_test | default(false) | bool
+    become: true
 
 - import_playbook: tower_deprovision.yml
 
