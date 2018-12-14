@@ -4,79 +4,93 @@
   hosts: database*
   vars:
     pgsqlrep_type_list: [ 'local', 'remote' ]
+  vars_files: vars_tower.yml
   tasks:
-
-  - name: PostgreSQL streaming replication pre-preflight check
+  - name: HIGH LEVEL BLOCK TO DETERMINE IF DB FAILOVER IS MANAGED BY TOOLKIT
     block:
-      - name: ensure there is only one database in main database group
-        fail:
-          msg: "Multiple hosts or none in primary database group. hosts: {{ groups['database'] }}"
-        when: groups['database'] | length != 1
 
-      - name: ensure there is at least one host in replication group
-        fail:
-          msg: "No hosts in database_replica group"
-        when: groups['database_replica'] | length == 0
+    - name: PostgreSQL streaming replication pre-preflight check
+      block:
+        - name: ensure there is only one database in main database group
+          fail:
+            msg: "Multiple hosts or none in primary database group. hosts: {{ groups['database'] }}"
+          when: groups['database'] | length != 1
 
-      - name: ensure there are only maximum two hosts in replication group
-        fail:
-          msg: "Too many hosts in replica group. Only an HA and DR instance are allowed.  hosts: {{ groups['database_replica']  }}"
-        when: groups['database_replica'] | length > 2
+        - name: ensure there is at least one host in replication group
+          fail:
+            msg: "No hosts in database_replica group"
+          when: groups['database_replica'] | length == 0
 
-      - set_fact:
-          _pgsqlrep_types: "{{ groups['database_replica'] | map('extract', hostvars, 'pgsqlrep_type') | list}}"
+        - name: ensure there are only maximum two hosts in replication group
+          fail:
+            msg: "Too many hosts in replica group. Only an HA and DR instance are allowed.  hosts: {{ groups['database_replica']  }}"
+          when: groups['database_replica'] | length > 2
 
-      - fail:
-          msg: "pgsqlrep_type is undefined for one or more hosts"
-        when: "'Undefined' in _pgsqlrep_types"
+        - set_fact:
+            _pgsqlrep_types: "{{ groups['database_replica'] | map('extract', hostvars, 'pgsqlrep_type') | list}}"
 
-      - fail:
-          msg: "pgsqlrep_type must be local or remote"
-        when: item not in pgsqlrep_type_list
-        with_items: "{{ _pgsqlrep_types }}"
+        - fail:
+            msg: "pgsqlrep_type is undefined for one or more hosts"
+          when: "'Undefined' in _pgsqlrep_types"
 
-    delegate_to: localhost
-    run_once: true
+        - fail:
+            msg: "pgsqlrep_type must be local or remote"
+          when: item not in pgsqlrep_type_list
+          with_items: "{{ _pgsqlrep_types }}"
 
-  - name: set facts for master and replica. Consider using facts?
-    set_fact:
-      _pgsqlrep_master_address: "{{ groups['database'][0] | infer_address(hostvars) }}"
-      _pgsqlrep_replica_address: "{{ groups['database_replica'] | map('infer_address', hostvars) | list }}"
+      delegate_to: localhost
+      run_once: true
 
-  - name: PostgreSQL streaming replication pre-preflight check. Contd
-    block:
-      - name: ensure pg_host has value of master database
-        fail:
-          msg: "pg_host does not match master"
-        when: pg_host != _pgsqlrep_master_address
-    delegate_to: localhost
-    run_once: true
+    - name: set facts for master and replica. Consider using facts?
+      set_fact:
+        _pgsqlrep_master_address: "{{ groups['database'][0] | infer_address(hostvars) }}"
+        _pgsqlrep_replica_address: "{{ groups['database_replica'] | map('infer_address', hostvars) | list }}"
+
+    - name: PostgreSQL streaming replication pre-preflight check. Contd
+      block:
+        - name: ensure pg_host has value of master database
+          fail:
+            msg: "pg_host does not match master"
+          when: pg_host != _pgsqlrep_master_address
+      delegate_to: localhost
+      run_once: true
+    when: not tower_db_external
 
 - name: Configure PostgreSQL streaming replication
   hosts: database_replica
   become: true
   vars_files: vars_tower.yml
   tasks:
-  - include_role:
-      name: postgres_base
-    when: not (pgsqlrep_install_skip | default(False) | bool)
+  - name: HIGH LEVEL BLOCK TO DETERMINE IF DB FAILOVER IS MANAGED BY TOOLKIT
+    block:
+
+    - include_role:
+        name: postgres_base
+      when: not (pgsqlrep_install_skip | default(False) | bool)
+
+    when: not tower_db_external
 
 - name: Configure PSQL master server
   hosts: database[0]
   become: true
+  vars_files: vars_tower.yml
   roles:
   - role: samdoran.pgsql-replication
     pgsqlrep_role: master
     pgsqlrep_master_address: "{{ _pgsqlrep_master_address }}"
     pgsqlrep_replica_address: "{{ _pgsqlrep_replica_address }}"
+    when: not tower_db_external
 
 - name: Configure PSQL replica
   hosts: database_replica
   become: true
+  vars_files: vars_tower.yml
   roles:
   - role: samdoran.pgsql-replication
     pgsqlrep_role: replica
     pgsqlrep_master_address: "{{ _pgsqlrep_master_address }}"
     pgsqlrep_replica_address: "{{ _pgsqlrep_replica_address }}"
+    when: not tower_db_external
+
 
 ...

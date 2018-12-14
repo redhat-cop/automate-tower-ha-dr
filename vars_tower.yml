@@ -26,3 +26,6 @@ tower_installer_current: "{{ tower_installer_dir }}/{{ tower_artifact | regex_re
 tower_inventory_pm: inventory_ha_dr/inventory_pm
 tower_inventory_dr: inventory_ha_dr/inventory_dr
 tower_inventory_ha: inventory_ha_dr/inventory_ha
+
+tower_db_external: true
+#_tower_db_external_hl: "{{ ":&localhost" if tower_db_external else "" }}"
