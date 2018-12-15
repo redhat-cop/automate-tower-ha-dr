@@ -9,7 +9,8 @@ tower-backup*
 .DS_Store
 .*
 extra_vars.yml
-tower_installer/
+tower-installer/
 *.retry
 .tower_inventory.ini
 .ftpconfig
+*~

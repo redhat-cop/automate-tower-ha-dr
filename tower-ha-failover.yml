@@ -16,7 +16,7 @@
   - role: tower_inventory
     tower_inventory_file: "{{ tower_inventory_ha if _tower_failback else tower_inventory_pm  }}"
 
-- import_playbook: tower_stop_services.yml
+- import_playbook: tower-stop-services.yml
 
 - name: setup inventory for backup site or primary site in failback
   hosts: localhost
@@ -27,7 +27,7 @@
     tower_inventory_file: "{{ tower_inventory_pm if _tower_failback else tower_inventory_ha  }}"
 
 # when there is no replica, no action will be taken
-- import_playbook: tower_pgsql_promote.yml
+- import_playbook: tower-pgsql-promote.yml
 
 - name: setup inventory for ha site or primary site in failback and rerun tower installer
   hosts: tower
@@ -69,6 +69,6 @@
     become: true
 
 
-- import_playbook: tower_setup_replication.yml
+- import_playbook: tower-setup-replication.yml
 
-- import_playbook: tower_check_replication.yml
+- import_playbook: tower-check-replication.yml
