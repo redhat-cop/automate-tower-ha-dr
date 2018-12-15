@@ -6,7 +6,7 @@ tower_version: 3.3.1-1
 tower_bundle: true
 
 #default download/extract location for installer
-tower_installer_dir: tower_installer
+tower_installer_dir: tower-installer
 
 # installer download and extract details
 tower_download_url_base:  "https://releases.ansible.com/ansible-tower/setup{{ '-bundle' if tower_bundle else '' }}"
