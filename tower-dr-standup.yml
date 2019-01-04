@@ -1,0 +1,56 @@
+---
+
+- hosts: localhost
+  gather_facts: no
+  become: false
+  vars:
+    tower_backup_file: tower-backup-latest.tar.gz
+  vars_files: vars_tower.yml
+  tasks:
+
+  - include_role:
+      name: tower_inventory
+    vars:
+      tower_inventory_file: "{{ tower_inventory_pm }}"
+
+  - include_role:
+      name: tower_secret_key
+    vars:
+      tower_secret_key_delegate: "{{groups['tower'][0]}}"
+
+- name: setup inventory ensuring dr/secondary site and deploy key to DR
+  hosts: localhost
+  gather_facts: no
+  vars_files: vars_tower.yml
+  tasks:
+  - include_role:
+      name: tower_inventory
+    vars:
+      tower_inventory_file: "{{ tower_inventory_pm }}"
+
+- hosts: tower
+  gather_facts: no
+  become: true
+  tasks:
+
+    - name: ensure tower configuration
+      file:
+        state: directory
+        path: /etc/tower
+        mode: 0640
+
+    - name: deploy secret to tower
+      copy:
+        content: "{{hostvars['localhost'].tower_secret_key}}"
+        dest: "/etc/tower/SECRET_KEY"
+        mode: 0640
+    # adding this because installer fails this was left behind
+    # and awx user and group was removed
+    - name: remove extraneous tower log directory
+      file:
+        path: /var/log/tower
+        state: absent
+
+- import_playbook: tower-setup-replication.yml
+
+- import_playbook: tower-check-replication.yml

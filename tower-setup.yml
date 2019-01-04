@@ -3,6 +3,8 @@
 - hosts: localhost
   connection: local
   vars_files: vars_tower.yml
+  vars:
+    tower_download_only: false
   tasks:
 
   - name: offline install
@@ -33,23 +35,32 @@
     command: "tar xzf {{ tower_artifact }}"
     args:
       chdir: "{{ tower_installer_dir }}"
+      creates: "{{ tower_installer_current}}"
     #unarchive:
     #  src: "{{ tower_installer_dir }}/{{ tower_artifact }}"
     #  dest: "{{ tower_installer_dir }}/"
     #  remote_src: yes
     #  creates: "{{ tower_installer_current }}"
 
-  - name: run tower installer for version {{ tower_version }}
-    command: "./setup.sh -i {{ ansible_inventory_sources[0] }} -e required_ram=0"
-    args:
-      chdir: "{{ tower_installer_current }}"
-    environment:
-      ANSIBLE_SUDO: True
-    register: tower_install_status
-    ignore_errors: yes
-    when: not tower_install_skip | default(false) | bool
+  - block:
+    - name: ensure inventory is pointed to primary
+      include_role:
+        name: tower_inventory
+      vars:
+        tower_inventory_file: "{{ tower_inventory_pm }}"
 
-  - name: fail with message
-    fail:
-      msg: "Tower installation failed.  Please check {{ tower_installer_current }}/setup.log"
-    when: "'skipped' not in tower_install_status and tower_install_status.failed"
+    - name: run tower installer for version {{ tower_version }}
+      command: "./setup.sh -i {{ ansible_inventory_sources[0] }} -e required_ram=0"
+      args:
+        chdir: "{{ tower_installer_current }}"
+      environment:
+        ANSIBLE_SUDO: True
+      register: tower_install_status
+      ignore_errors: yes
+      when: not tower_install_skip | default(false) | bool
+
+    - name: fail with message
+      fail:
+        msg: "Tower installation failed.  Please check {{ tower_installer_current }}/setup.log"
+      when: "'skipped' not in tower_install_status and tower_install_status.failed"
+    when: not tower_download_only

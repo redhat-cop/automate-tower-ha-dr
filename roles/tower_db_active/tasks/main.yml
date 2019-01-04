@@ -1,5 +1,8 @@
 ---
 
+- debug:
+    msg: "Setting database to {{ tower_db_active_host | infer_address(hostvars) }}"
+
 - name: Update Tower postgres.py
   lineinfile:
     dest: /etc/tower/conf.d/postgres.py
@@ -13,4 +16,3 @@
 
 - name: restart tower
   command: ansible-tower-service restart
-  when: pg_update.changed

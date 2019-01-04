@@ -1,24 +1,7 @@
 ---
 
-- name: Determine which replica to fail over to
-  hosts: database_replica
-  vars:
-    pgsqlrep_type_list: [ 'local', 'remote' ]
-  tasks:
-  - name: check for promotion type
-    fail:
-       msg: "promotion_type must be passed as an extra var with 'local' or 'remote'"
-    when: promotion_type is not defined or promotion_type not in pgsqlrep_type_list
-
-  - set_fact:
-      _target: "{{ 'target' if pgsqlrep_type == promotion_type else 'other' }}"
-
-  - name: set up group based on passed parameter
-    group_by:
-      key: promotion_{{_target}}
-
-- name: Promote secondary database to primary
-  hosts: "promotion_target"
+- name: Promote secondary HA/DR database to primary
+  hosts: database
   become: true
   tasks:
     - name: Get the current PostgreSQL version

@@ -1,0 +1,13 @@
+---
+
+- name: set fact for cluster host
+  set_fact:
+    cluster_host: "{{ rabbitmq_host | default(ansible_host) }}"
+
+- name: import misc role to add node to cluster
+  import_role:
+    name: "{{tower_installer_current}}/roles/misc"
+  vars:
+    cluster_host_identifier: "{{ cluster_host }}"
+    aw_group: awx
+    aw_user: awx
