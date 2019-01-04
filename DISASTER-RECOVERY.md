@@ -40,18 +40,23 @@ DR Failback
 
 - all machines are pre-provisioned with authentication mechanism known (password, SSH keys)
 - if not running as root and need to use privilege escalation (eg sudo) you need to set it up in the inventory (`ansible_become=true`)
-- this approach has not been tested with the bundled installer
+- If there is no connectivity to the internet the bundle installation media will need to be placed in the `tower_installer` directory
 
 *Setup*
 
 
-1.
-
-Clone this repository.  In its current state is has the online Ansible Tower 3.3.1 installer inside.
+1. Clone this repository.  In its current state is has the online Ansible Tower 3.3.1 installer inside.
 
 ```
 git clone ssh://git@gitlab.consulting.redhat.com:2222/towerrescue/ansible_tower_setup.git
 ```
+
+2. Configure `vars_tower.yml` file for your environment.  This includes definition of the inventory file for each configuration (primary/normal, HA, DR) and referencing their location.  
+
+3. Run the `tower_setup.yml` playbook.  This playbook will take care of downloading the tower installation media for you installation (if it does not yet exist) and running the tower installer.  The version to be downloaded and/or used in the installation is found in the `vars_tower.yml` file
+
+
+
 
 If you want to pull in the latest installer you should just overwrite the existing Tower installer files by executing something like.  The toolkit does not modify any of the base installer playbooks or scripts.
 
