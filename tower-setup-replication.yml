@@ -4,7 +4,7 @@
   hosts: database*
   vars:
     pgsqlrep_type_list: [ 'local', 'remote' ]
-  vars_files: vars_tower.yml
+  vars_files: tower-vars.yml
   tasks:
   - name: HIGH LEVEL BLOCK TO DETERMINE IF DB FAILOVER IS MANAGED BY TOOLKIT
     block:
@@ -59,7 +59,7 @@
 - name: Configure PostgreSQL streaming replication
   hosts: database_replica
   become: true
-  vars_files: vars_tower.yml
+  vars_files: tower-vars.yml
   tasks:
   - name: HIGH LEVEL BLOCK TO DETERMINE IF DB FAILOVER IS MANAGED BY TOOLKIT
     block:
@@ -73,7 +73,7 @@
 - name: Configure PSQL master server
   hosts: database[0]
   become: true
-  vars_files: vars_tower.yml
+  vars_files: tower-vars.yml
   roles:
   - role: samdoran.pgsql-replication
     pgsqlrep_role: master
@@ -84,7 +84,7 @@
 - name: Configure PSQL replica
   hosts: database_replica
   become: true
-  vars_files: vars_tower.yml
+  vars_files: tower-vars.yml
   roles:
   - role: samdoran.pgsql-replication
     pgsqlrep_role: replica

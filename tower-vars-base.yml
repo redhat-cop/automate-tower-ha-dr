@@ -23,15 +23,9 @@ tower_ram_override: false
 #get the current installer directory
 tower_installer_current: "{{ tower_installer_dir }}/{{ tower_artifact | regex_replace('.tar.gz') }}"
 
-<<<<<<< HEAD
-tower_inventory_pm: inventory_static_dr/inventory_pm
-tower_inventory_dr: inventory_static_dr/inventory_dr
-#tower_inventory_ha: inventory_ha_dr/inventory_ha
-=======
 tower_inventory_pm: inventory_ha_dr/inventory_pm
 tower_inventory_dr: inventory_ha_dr/inventory_dr
 tower_inventory_ha: inventory_ha_dr/inventory_ha
 
 tower_db_external: false
 #_tower_db_external_hl: "{{ ":&localhost" if tower_db_external else "" }}"
->>>>>>> f767af86a7db6ef7ef2898a30362b6a0931d3169

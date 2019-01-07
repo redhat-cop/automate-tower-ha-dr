@@ -2,7 +2,7 @@
 
 - hosts: localhost
   connection: local
-  vars_files: vars_tower.yml
+  vars_files: tower-vars.yml
   vars:
     tower_download_only: false
   tasks:

@@ -4,13 +4,13 @@ Configure High Availability and/or Disaster Recovery on a Tower Cluster
 **Reference Architecture**
 ![Ref Arch](readme_images/TowerClusterReferenceArch.png "Ref Arch")
 
-This diagram represents the reference architecture for a full high availability and disaster recovery solution.
+This diagram represents the reference architecture for a full high availability and disaster recovery solution.  This solution can be individually tailored to address a single availability solution.  For example, if only disaster recovery is needed the configuration supports exclusion of the HA replica.
 
 [Link to Lucidchart diagrams](https://www.lucidchart.com/invitations/accept/10913de1-7235-4ede-a975-38c69a517a56)
 
 *High Availability*
 
-[Ansible Tower clustering](https://docs.ansible.com/ansible-tower/latest/html/administration/clustering.html) provides increased availability by distributing jobs across nodes in a cluster. A failure of a single node will simply result in reduced capacity in the cluster.  The database remains a single point of failure in a cluster.  If the the database becomes unavailable the cluster will also become unavailable.  This configuration provides for a replica database (HA Replica) in the primary cluster datacenter, which can be transitioned to primary.  Although not completely automated, this provides for faster recovery in database outage scenarios.
+[Ansible Tower clustering](https://docs.ansible.com/ansible-tower/latest/html/administration/clustering.html) provides increased availability by distributing jobs across nodes in a cluster. A failure of a single node results in reduced capacity in the cluster. The database remains a single point of failure in a cluster.  If the the database becomes unavailable the cluster will also become unavailable.  This configuration provides for a replica database (HA Replica) in the primary cluster datacenter, which can be transitioned to primary.  Although not completely automated, this provides for faster recovery in database outage scenarios.
 
 **NOTE: In the future this feature will delivered and supported by a third party.**
 
@@ -38,19 +38,19 @@ DR Failback
 
 *Assumptions/Prerequisites*
 
-- all machines are pre-provisioned with authentication mechanism known (password, SSH keys)
+- all Ansible Tower machines are pre-provisioned with authentication mechanism known (password, SSH keys)
+- Ansible control machine (RHEL 7 or CentOS) available and configured with Ansible 2.7+
 - if not running as root and need to use privilege escalation (eg sudo) you need to set it up in the inventory (`ansible_become=true`)
-- this approach has not been tested with the bundled installer
+- If there is no connectivity to the internet the bundle installation media will need to be placed in the `tower_installer` directory.  Please ensure the bundle is available before preceding.
 
 *Setup*
 
 
-1.
-
-Clone this repository.  In its current state is has the online Ansible Tower 3.3.1 installer inside.
+1. Clone this repository to the configure Ansible control machine and enter directory
 
 ```
 git clone ssh://git@gitlab.consulting.redhat.com:2222/towerrescue/ansible_tower_setup.git
+cd ansible_tower_setup
 ```
 
 If you want to pull in the latest installer you should just overwrite the existing Tower installer files by executing something like.  The toolkit does not modify any of the base installer playbooks or scripts.
