@@ -6,7 +6,7 @@
   become_user: postgres
   vars:
     replication_time_threshold: 20
-  vars_files: vars_tower.yml
+  vars_files: tower-vars.yml
   tasks:
   - name: HIGH LEVEL BLOCK TO DETERMINE IF DB REPLICATION IS MANAGED BY TOOLKIT
     block:
@@ -37,7 +37,7 @@
   gather_facts: no
   become: true
   become_user: postgres
-  vars_files: vars_tower.yml
+  vars_files: tower-vars.yml
   tasks:
 
   - name: HIGH LEVEL BLOCK TO DETERMINE IF DB REPLICATION IS MANAGED BY TOOLKIT
