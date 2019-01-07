@@ -17,3 +17,4 @@ tower_installer/
 *~
 *.html
 *.pdf
+tower-vars.yml
