@@ -14,3 +14,6 @@ tower-installer/
 .tower_inventory.ini
 .ftpconfig
 *~
+*.html
+*.pdf
+tower-vars.yml

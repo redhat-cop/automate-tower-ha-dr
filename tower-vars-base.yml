@@ -1,0 +1,37 @@
+---
+
+tower_version: 3.3.0-1
+
+#determine bundle usage
+tower_bundle: true
+
+#default download/extract location for installer
+tower_installer_dir: tower-installer
+
+# installer download and extract details
+tower_download_url_base:  "https://releases.ansible.com/ansible-tower/setup{{ '-bundle' if tower_bundle else '' }}"
+tower_artifact_base: "ansible-tower-setup{{ '-bundle' if tower_bundle else '' }}"
+tower_artifact: "{{ tower_artifact_base }}-{{ tower_version }}{{ '.el7' if tower_bundle else '' }}.tar.gz"
+tower_download_url: "{{ tower_download_url_base }}/{{ tower_artifact }}"
+
+#indicated whether this will be installed without internet connectivity
+tower_disconnected: true
+
+#override RAM reqts
+tower_ram_override: false
+
+#get the current installer directory
+tower_installer_current: "{{ tower_installer_dir }}/{{ tower_artifact | regex_replace('.tar.gz') }}"
+
+<<<<<<< HEAD
+tower_inventory_pm: inventory_static_dr/inventory_pm
+tower_inventory_dr: inventory_static_dr/inventory_dr
+#tower_inventory_ha: inventory_ha_dr/inventory_ha
+=======
+tower_inventory_pm: inventory_ha_dr/inventory_pm
+tower_inventory_dr: inventory_ha_dr/inventory_dr
+tower_inventory_ha: inventory_ha_dr/inventory_ha
+
+tower_db_external: false
+#_tower_db_external_hl: "{{ ":&localhost" if tower_db_external else "" }}"
+>>>>>>> f767af86a7db6ef7ef2898a30362b6a0931d3169
