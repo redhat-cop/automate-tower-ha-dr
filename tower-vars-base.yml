@@ -8,12 +8,6 @@ tower_bundle: true
 #default download/extract location for installer
 tower_installer_dir: tower-installer
 
-# installer download and extract details
-tower_download_url_base:  "https://releases.ansible.com/ansible-tower/setup{{ '-bundle' if tower_bundle else '' }}"
-tower_artifact_base: "ansible-tower-setup{{ '-bundle' if tower_bundle else '' }}"
-tower_artifact: "{{ tower_artifact_base }}-{{ tower_version }}{{ '.el7' if tower_bundle else '' }}.tar.gz"
-tower_download_url: "{{ tower_download_url_base }}/{{ tower_artifact }}"
-
 #indicated whether this will be installed without internet connectivity
 tower_disconnected: true
 

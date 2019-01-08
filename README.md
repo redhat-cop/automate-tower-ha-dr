@@ -42,6 +42,8 @@ DR Failback
 - Ansible control machine (RHEL 7 or CentOS) available and configured with Ansible 2.7+
 - if not running as root and need to use privilege escalation (eg sudo) you need to set it up in the inventory (`ansible_become=true`)
 - If there is no connectivity to the internet the bundle installation media will need to be placed in the `tower_installer` directory.  Please ensure the bundle is available before preceding.
+- The Ansible Tower installation inventory for each configuration will need to be defined.
+- This toolkit expects each database (HA/DR) is managed independently and failover is not handled through DNS or site selector failover
 
 *Setup*
 
@@ -52,6 +54,97 @@ DR Failback
 git clone ssh://git@gitlab.consulting.redhat.com:2222/towerrescue/ansible_tower_setup.git
 cd ansible_tower_setup
 ```
+
+2. Create a directory for your Tower installation inventories.  Examples are provided in the `inventory_dr_static` and `inventory_ha_dr` directories of this repository.  
+
+[inventory_ha_dr/inventory_pm](inventory_ha_dr/inventory_pm)
+
+```
+[tower]
+towervm1 ansible_ssh_host="10.26.10.50"
+
+[database]
+towerdb1 ansible_host="10.26.10.20"
+
+[database_replica]
+towerdb2 ansible_host="10.26.10.21" pgsqlrep_type=local
+towerdb3 ansible_host="10.26.10.22" pgsqlrep_type=remote
+
+[database_all:children]
+database
+database_replica
+
+[database_all:vars]
+pgsqlrep_password=password4
+
+[all:vars]
+<<CLIPPED>>
+pg_host='10.26.10.20'
+<<CLIPPED>>
+```
+
+[inventory_ha_dr/inventory_dr](inventory_ha_dr)
+
+```
+[tower]
+towervm2 ansible_host="10.26.10.51"
+
+[database]
+towerdb3 ansible_host="10.26.10.22"
+
+[database_replica]
+towerdb1 ansible_host="10.26.10.20" pgsqlrep_type=remote
+
+[database_all:children]
+database
+database_replica
+
+[database_all:vars]
+pgsqlrep_password=password4
+
+[all:vars]
+<<CLIPPED>>
+pg_host='10.26.10.22'
+<<CLIPPED>>
+```
+
+[inventory_ha_dr/inventory_ha]
+
+2. Copy `tower-vars-base.yml` to `tower-vars.yml` for customization in your environments
+
+```
+cp tower-vars.yml tower-vars.yml
+```
+
+3. Modify the `tower-vars.yml` file for your environment.  A description of the most commonly customized values are provided below.
+
+```
+# version of Ansible Tower to install/working with
+tower_version: 3.3.0-1
+
+# determine if the bundle is being used
+tower_bundle: true
+
+# indicated whether this will be installed without internet connectivity
+tower_disconnected: true
+
+# list of Ansible tower installer inventory files for each configuration
+tower_inventory_pm: inventory_ha_dr/inventory_pm
+tower_inventory_dr: inventory_ha_dr/inventory_dr
+tower_inventory_ha: inventory_ha_dr/inventory_ha
+
+# indicate whether the database is is managed by the installer and toolkit or provided as a service
+tower_db_external: false
+
+```
+
+
+file for your environment.  This includes definition of the inventory file for each configuration (primary/normal, HA, DR) and referencing their location.  
+
+3. Run the `tower_setup.yml` playbook.  This playbook will take care of downloading the tower installation media for you installation (if it does not yet exist) and running the tower installer.  The version to be downloaded and/or used in the installation is found in the `tower-vars.yml` file
+
+
+
 
 If you want to pull in the latest installer you should just overwrite the existing Tower installer files by executing something like.  The toolkit does not modify any of the base installer playbooks or scripts.
 
@@ -68,7 +161,7 @@ tar xzf --strip-components=1 -C ansible_tower_setup
 
 Update the inventory_pm (primary/base inventory), inventory_ha (HA configuration inventory) and inventory_dr (DR configuration inventory) as appropriate.  The inventory_pm should contain only your primary cluster hosts and the databases you plan on replicating to. The inventory_dr should only contain your DR cluster hosts.  Only one HA ("local") database and one DR ("remote") database is supported.  These are identified by the pgsqlrep_type hostvar.  Make sure you get the right databases configured as primary and replicas in each inventory.
 
-Here is an example of an inventory file for each coniguration
+Here is an example of an inventory file for each configuration
 
 **inventory_pm (primary inventory)**
 ```
