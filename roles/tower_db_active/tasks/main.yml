@@ -1,0 +1,18 @@
+---
+
+- debug:
+    msg: "Setting database to {{ tower_db_active_host | infer_address(hostvars) }}"
+
+- name: Update Tower postgres.py
+  lineinfile:
+    dest: /etc/tower/conf.d/postgres.py
+    regexp: "^(.*'HOST':)"
+    line: "\\1 '{{ tower_db_active_host | infer_address(hostvars) }}',"
+    backrefs: yes
+  register: pg_update
+
+- set_fact:
+    tower_install_skip: true
+
+- name: restart tower
+  command: ansible-tower-service restart

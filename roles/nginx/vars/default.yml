@@ -1,4 +1,0 @@
----
-nginx_init_name: "nginx"
-nginx_user: "www-data"
-httpd_init_name: "httpd"

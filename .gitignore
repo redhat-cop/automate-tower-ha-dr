@@ -1,7 +1,5 @@
-tower_secret_key_vault
 *.log
 *.pyc
-#roles_external/samdoran.pgsql-replication
 tower-backup*
 2018*
 2019*
@@ -9,6 +7,14 @@ tower-backup*
 .DS_Store
 .*
 extra_vars.yml
+tower-installer/
 tower_installer/
 tower-installer
 tower-vars.yml
+*.retry
+.tower_inventory.ini
+.ftpconfig
+*~
+*.html
+*.pdf
+

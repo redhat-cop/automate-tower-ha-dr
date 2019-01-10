@@ -1,0 +1,40 @@
+---
+
+- name: Promote secondary HA/DR database to primary
+  hosts: database
+  become: true
+  tasks:
+    - name: Get the current PostgreSQL version
+      import_role:
+        name: samdoran.pgsql-replication
+        tasks_from: pgsql_version.yml
+
+    - name: Check recovery.conf
+      stat:
+        path: /var/lib/pgsql/{{ pgsql_version }}/data/recovery.conf
+      register: recovery_conf
+
+    - name: Exit if secondary is already promoted or not in standby mode
+      fail:
+        msg: Secondary database server is not in standby mode.
+      when: recovery_conf.stat.isreg is not defined
+      ignore_errors: yes
+
+    - name: Promote secondary PostgreSQL server to primary
+      command: /usr/pgsql-{{ pgsql_version }}/bin/pg_ctl promote
+      become_user: postgres
+      environment:
+        PGDATA: /var/lib/pgsql/{{ pgsql_version }}/data
+      ignore_errors: yes
+      when: recovery_conf.stat.isreg is defined
+
+    - name: ensure replica is not in recovery mode
+      command: psql -U postgres -t -c "select pg_is_in_recovery();"
+      register: recovery_mode
+      changed_when: false
+      become_user: postgres
+
+    - name: check that recovery mode is off
+      debug:
+        msg: "Recovery mode is '{{ recovery_mode.stdout.strip() }}'"
+      failed_when: recovery_mode.stdout.strip() != 'f'

@@ -1,0 +1,19 @@
+---
+
+- hosts: tower
+  become: yes
+  gather_facts: no
+  vars:
+    dbhost: "{{groups['database'][0]}}"
+  tasks:
+  - name: Update Tower postgres.py
+    lineinfile:
+      dest: /etc/tower/conf.d/postgres.py
+      regexp: "^(.*'HOST':)"
+      line: "\\1 '{{ dbhost | infer_address(hostvars) }}',"
+      backrefs: yes
+    notify: restart tower
+
+  handlers:
+  - name: restart tower
+    command: ansible-tower-service restart

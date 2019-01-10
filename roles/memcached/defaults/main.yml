@@ -1,2 +1,0 @@
-# Memcache binding
-awx_install_memcached_bind: 'unix:/var/run/memcached/memcached.sock'
