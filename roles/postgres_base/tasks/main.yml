@@ -17,6 +17,10 @@
   vars:
     nginx_exec_vars_only: true
 
+- name: include vars normally in group vars all in the installer
+  include_vars:
+    file: "{{ tower_installer_current }}/group_vars/all"
+
 - name: Setup RedHat/CentOS repos for pg installation
   import_role:
     name: "{{tower_installer_current}}/roles/repos_el"
