@@ -10,3 +10,5 @@ tower-backup*
 .*
 extra_vars.yml
 tower_installer/
+tower-installer
+tower-vars.yml
