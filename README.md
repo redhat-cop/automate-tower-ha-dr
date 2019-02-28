@@ -176,8 +176,8 @@ DR Failback
   tower_inventory_dr: inventory_ha_dr/inventory_dr
   tower_inventory_ha: inventory_ha_dr/inventory_ha
 
-  # indicate whether the database is is managed by the installer and toolkit or
-  # provided as a service.  If set to false, all replication configuration is skipped
+  # indicate whether the database is managed by the installer and toolkit or
+  # provided as a service.  If set to true, all replication configuration is skipped
   tower_db_external: false
   ```
 
