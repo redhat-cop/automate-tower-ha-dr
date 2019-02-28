@@ -1,11 +1,16 @@
 ---
 
-- hosts: "{{ tower_host }}"
+- hosts: all
   gather_facts: no
   become: true
   vars:
     pkgs_to_remove:
     - ansible-tower*
+    - rabbitmq-server*
+    - postgresql96*
+    dep_pkgs_to_remove:
+    - ansible
+    - python2-jmespath
     - apr
     - apr-util
     - bubblewrap
@@ -37,13 +42,13 @@
     - postgresql96-libs
     - python-psycopg2
     - setools-libs
-    - rabbitmq-server
     dirs_to_remove:
     - /var/lib/pgsql
     - /var/lib/awx
     - /var/lib/rabbitmq
     - /etc/tower
     - /var/log/tower
+    - /etc/yum.repos.d/ansible-tower.repo
 
   tasks:
   - name: ensure tower services are stopped
@@ -55,8 +60,20 @@
       name: "{{ pkgs_to_remove }}"
       state: absent
 
+  - name: remove dep packages
+    yum:
+      name: "{{ dep_pkgs_to_remove }}"
+      state: absent
+    when: uninstall_deps | default(false)
+
   - name: remove dirs
     file:
       path: "{{ item }}"
       state: absent
     with_items: "{{ dirs_to_remove }}"
+
+  - name: clean yum cache
+    command: "{{ item }}"
+    with_items:
+    - "yum clean all"
+    - "rm -rf /var/cache/yum"
