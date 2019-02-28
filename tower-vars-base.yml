@@ -27,5 +27,7 @@ tower_inventory_pm: inventory_ha_dr/inventory_pm
 tower_inventory_dr: inventory_ha_dr/inventory_dr
 tower_inventory_ha: inventory_ha_dr/inventory_ha
 
+# indicate whether the database is managed by the installer and toolkit or
+# provided as a service.  If set to true, all replication configuration is skipped
 tower_db_external: false
 #_tower_db_external_hl: "{{ ":&localhost" if tower_db_external else "" }}"
