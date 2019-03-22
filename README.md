@@ -156,7 +156,7 @@ DR Failback
 3. Copy `tower-vars-base.yml` to `tower-vars.yml` for customization in your environments
 
   ```
-  cp tower-vars.yml tower-vars.yml
+  cp tower-vars-base.yml tower-vars.yml
   ```
 
 4. Modify the `tower-vars.yml` file for your environment.  A description of the most commonly customized values are provided below. This includes definition of the inventory file for each configuration (primary/normal, HA, DR) and referencing their location.  **This file will be read in by all toolkit playbooks**
