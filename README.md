@@ -259,7 +259,7 @@ ansible-playbook -i INV_DIR/inventory_dr tower-setup-replication.yml
 to failback to the original configuration
 
 ```
-ansible-playbook tower-ha-failover.yml -e 'tower_failback=1'
+ansible-playbook tower-dr-failover.yml -e 'tower_failback=1'
 ```
 
 **Backup and Restore**
