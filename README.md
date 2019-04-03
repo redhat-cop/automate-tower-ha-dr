@@ -6,7 +6,7 @@ Configure High Availability and/or Disaster Recovery on a Tower Cluster
 
 This diagram represents the reference architecture for a full high availability and disaster recovery solution.  This solution can be individually tailored to address a single availability solution.  For example, if only disaster recovery is needed the configuration supports exclusion of the HA replica.
 
-[Link to Lucidchart diagrams](https://www.lucidchart.com/invitations/accept/10913de1-7235-4ede-a975-38c69a517a56)
+[Link to Lucidchart diagrams](https://www.lucidchart.com/invitations/accept/a1aec260-8a48-4752-894c-c3c2112688c8)
 
 ### High Availability
 
