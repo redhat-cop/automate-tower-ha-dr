@@ -32,40 +32,33 @@
 - name: setup inventory for dr site or primary site in failback and rerun tower installer
   hosts: tower
   vars_files: tower-vars.yml
+  vars:
+    _tower_eng_failover: "{{ tower_eng_failover | default(False) | bool }}"
   tasks:
 
-  - name: full installer run
-    block:
-    - name: "run tower installer for version {{ tower_version }} LOG: {{ tower_installer_current }}/setup.log INV: "
-      command: "./setup.sh -i {{ ansible_inventory_sources[0] }} -e required_ram=0"
-      args:
-        chdir: "{{ tower_installer_current }}"
-      environment:
-        ANSIBLE_SUDO: True
-      register: tower_install_status
-      ignore_errors: yes
-
-    - name: fail with message
-      fail:
-        msg: "Tower installation failed.  Please check {{ tower_installer_current }}/setup.log"
-      when: "'skipped' not in tower_install_status and tower_install_status.failed"
-
+  - block:
+    - include_role:
+        name: tower_install
+      vars:
+        tower_install_inventory: "{{ ansible_inventory_sources[0] }}"
+        tower_install_directory: "{{ tower_installer_current }}"
+        tower_install_skip_run: "{{ tower_install_skip }}"
+        tower_install_ram_override: "{{ tower_ram_override }}"
     delegate_to: localhost
     run_once: true
-    when: not tower_install_skip | default(false) | bool and
-          not tower_install_test | default(false) | bool
+    when: not _tower_eng_failover
 
   - name: shortcut/engineering cluster failover
     block:
-    - name: test/engineering db update
+    - name: point tower to new master database
       include_role:
         name: tower_db_active
 
-    - name: rabbitmq and cluster setup
+    - name: perform rabbitmq and cluster setup
       include_role:
         name: tower_cluster
 
-    when: tower_install_test | default(false) | bool
+    when: _tower_eng_failover
     become: true
 
 - import_playbook: tower-deprovision.yml

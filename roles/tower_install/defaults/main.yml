@@ -1,0 +1,7 @@
+---
+
+tower_install_skip: False
+tower_install_inventory: "{{ ansible_inventory_sources[0] }}"
+tower_install_ram_override: True
+
+tower_install_extra_vars: "{{ '-e required_ram=0' if tower_ram_override else '' }}"

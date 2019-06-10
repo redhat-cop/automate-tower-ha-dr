@@ -1,0 +1,17 @@
+---
+
+- name: run tower installer for version {{ tower_version }}
+  command: "./setup.sh -i {{ tower_install_inventory }} {{ tower_install_extra_vars }}"
+  args:
+    chdir: "{{ tower_installer_current }}"
+  environment:
+    ANSIBLE_BECOME_METHOD: sudo
+    ANSIBLE_BECOME: True
+  register: tower_install_status
+  ignore_errors: yes
+  when: not (tower_install_skip | bool)
+
+- name: fail with message
+  fail:
+    msg: "Tower installation failed.  Please check {{ tower_installer_current }}/setup.log"
+  when: "'skipped' not in tower_install_status and tower_install_status.failed"
