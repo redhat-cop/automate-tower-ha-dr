@@ -30,7 +30,9 @@
     - perl-Error
     - perl-Git
     - perl-TermReadKey
-    - postgresql96
+    # postgresql96 and libs should be covered by pkgs_to_remove
+    #- postgresql96
+    #- postgresql96-libs
     - python-devel
     - python-meld3
     - python-virtualenv
@@ -39,7 +41,6 @@
     - subversion
     - subversion-libs
     - supervisor
-    - postgresql96-libs
     - python-psycopg2
     - setools-libs
     files_to_remove:
