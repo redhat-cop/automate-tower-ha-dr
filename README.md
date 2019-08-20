@@ -69,6 +69,8 @@ DR Failback
   - There should be no overlap between primary/HA and disaster recovery instance groups including the default `tower` instance group across inventory files,  This goes back to the discussion above that instance groups cannot span datacenters.   
 
   - Isolated instance groups will be unaffected by this process.  In a failover the isolated instance groups will remain unchanged. If one or more of the isolated instances is in the failed datacenter you may consider disabling them.
+  
+  - There should be no overlap between primary/HA and disaster recovery instance groups, including the default `tower` instance group, across inventory files.  This goes back to the discussion above that instance groups cannot span datacenters.   Isolated instance groups can be repeated if you wish to utilize existing isolated nodes.
 
   - The `database` and `database_replica` group membership should be unique across all inventory files.  The `database` group should have only one database and is the database in use the the given configuration.  The `database_replica` groups contain the streaming replicas to be configured.
 
