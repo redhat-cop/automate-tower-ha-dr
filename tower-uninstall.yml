@@ -77,3 +77,6 @@
     with_items:
     - "yum clean all"
     - "rm -rf /var/cache/yum"
+
+
+# Review Support article for more information https://access.redhat.com/solutions/3107181
