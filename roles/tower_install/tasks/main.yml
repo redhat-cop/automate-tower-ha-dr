@@ -1,7 +1,13 @@
 ---
 
+
+- name: determine if vault params in use
+  set_fact:
+    tower_vault_params: "--vault-password-file={{playbook_dir}}/.vault-pass"
+  when: tower_vault_file is defined
+
 - name: run tower installer for version {{ tower_version }}
-  command: "./setup.sh -i {{ tower_install_inventory }} {{ tower_install_extra_vars }}"
+  command: "./setup.sh -i {{ tower_install_inventory }} {{ tower_install_extra_vars }} -- {{ tower_vault_params }}"
   args:
     chdir: "{{ tower_installer_current }}"
   environment:

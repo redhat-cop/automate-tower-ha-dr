@@ -1,6 +1,6 @@
 ---
 
-tower_version: 3.3.0-1
+tower_version: 3.4.3-1
 
 #determine bundle usage
 tower_bundle: true
@@ -14,7 +14,7 @@ tower_disconnected: true
 #override RAM reqts
 tower_ram_override: false
 
-# installer download and extract details                                                                                                                                                                                               
+# installer download and extract details
 tower_download_url_base:  "https://releases.ansible.com/ansible-tower/setup{{ '-bundle' if tower_bundle else '' }}"
 tower_artifact_base: "ansible-tower-setup{{ '-bundle' if tower_bundle else '' }}"
 tower_artifact: "{{ tower_artifact_base }}-{{ tower_version }}{{ '.el7' if tower_bundle else '' }}.tar.gz"
@@ -23,6 +23,7 @@ tower_download_url: "{{ tower_download_url_base }}/{{ tower_artifact }}"
 #get the current installer directory
 tower_installer_current: "{{ tower_installer_dir }}/{{ tower_artifact | regex_replace('.tar.gz') }}"
 
+# exclude tower_inventory_ha or tower_inventory_dr if only using one configuration
 tower_inventory_pm: inventory_ha_dr/inventory_pm
 tower_inventory_dr: inventory_ha_dr/inventory_dr
 tower_inventory_ha: inventory_ha_dr/inventory_ha
@@ -30,4 +31,6 @@ tower_inventory_ha: inventory_ha_dr/inventory_ha
 # indicate whether the database is managed by the installer and toolkit or
 # provided as a service.  If set to true, all replication configuration is skipped
 tower_db_external: false
-#_tower_db_external_hl: "{{ ":&localhost" if tower_db_external else "" }}"
+
+# indicate vault password file.  presence of this var indicates vault is used
+#tower_vault_file: .vault-pass

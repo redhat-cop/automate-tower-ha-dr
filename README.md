@@ -40,9 +40,13 @@ DR Failback
 
 - **all Ansible Tower machines specified in inventory are pre-provisioned with authentication mechanism known (password, SSH keys)**
 - Ansible control machine (RHEL 7 or CentOS) available and configured with Ansible 2.7+
-- if not running as root and need to use privilege escalation (eg sudo) you need to set it up in the inventory (`ansible_become=true`)
+
+- In order to use this toolkit you *must use key authentication*.  If you are not using the root account, need to escalate and escalation requires re-authorization you must put the `ansible_become_password` in your inventory files.  If you wish to vault values in your inventory file(s) you need to set the `tower_vault_file` variables in the `tower-vars.yml`.  You also need to append `--vault-password-file` to any playbook runs listed below.
+
 - If there is no connectivity to the internet the bundle installation media will need to be placed in the `tower_installer` directory.  Please ensure the bundle is available before preceding.
+
 - The Ansible Tower installation inventory for each configuration will need to be defined.
+
 - This toolkit and the playbook suite is meant to be run by a one user at a time and one playbook at a time.   For example, do not try running multiple instances of the `tower-setup-replication.yml` playbook from the same playbook_dir.  Issues can arise because a dynamic inventory script is used with a tmp file indicating which file to load.  This mechanism allows to effectively change the inventory during playbook execution.  
 
 #### Setup
@@ -54,15 +58,17 @@ DR Failback
   cd ansible_tower_setup
   ```
 
-2. Create a directory for your Tower installation inventories.  Create the appropriate `inventory_pm`, `inventory_ha` and `inventory_dr` Tower installation inventory files in the directory.  Examples are provided in the `inventory_dr_static` and `inventory_ha_dr` directories of this repository.
+2. Create a directory for your Tower installation inventories.  Create the appropriate `inventory_pm`, `inventory_ha` and `inventory_dr` Tower installation inventory files in the directory.  Examples are provided in the [inventory_dr_static](inventory_dr_static) and [inventory_ha_dr](inventory_ha_dr) directories of this repository.
 
   Some points to note about your Ansible Tower inventory files:
 
   - Each inventory represents a separate configuration for Tower (primary, HA, DR)
 
-  - You must define a primary inventory(`inventory_pm`) along with one or both of the HA inventory(`inventory_ha`) and DR inventory(`inventory_dr`)
+  - You must define a primary inventory(`inventory_pm`) along with *_one or both_* of the HA inventory(`inventory_ha`) and DR inventory(`inventory_dr`)
 
-  - There should be no overlap between primary/HA and disaster recovery instance groups, include the default `tower` instance group across inventory files,  This goes back to the discussion above that instance groups cannot span datacenters.   Isolated instance groups can be repeated if you with to utilize existing isolated nodes.
+  - There should be no overlap between primary/HA and disaster recovery instance groups including the default `tower` instance group across inventory files,  This goes back to the discussion above that instance groups cannot span datacenters.   
+
+  - Isolated instance groups will be unaffected by this process.  In a failover the isolated instance groups will remain unchanged. If one or more of the isolated instances is in the failed datacenter you may consider disabling them.
 
   - The `database` and `database_replica` group membership should be unique across all inventory files.  The `database` group should have only one database and is the database in use the the given configuration.  The `database_replica` groups contain the streaming replicas to be configured.
 
@@ -75,7 +81,7 @@ DR Failback
     * The DR inventory file, used in DR failover, has streaming replication configured back to the original master and leaves replication to the HA database.  This is optional but in order to 'failback', replication to the original master must be re-enabled.
 
 
-  **Examples**
+  **Inventory Examples**
 
   [inventory_ha_dr/inventory_pm](inventory_ha_dr/inventory_pm)
 
@@ -163,7 +169,7 @@ DR Failback
 
   ```
   # version of Ansible Tower to install/working with
-  tower_version: 3.3.0-1
+  tower_version: 3.4.3-1
 
   # determine if the bundle is being used
   tower_bundle: true
@@ -172,6 +178,7 @@ DR Failback
   tower_disconnected: true
 
   # list of Ansible tower installer inventory files for each configuration
+  # exclude tower_inventory_ha or tower_inventory_dr if only using one configuration
   tower_inventory_pm: inventory_ha_dr/inventory_pm
   tower_inventory_dr: inventory_ha_dr/inventory_dr
   tower_inventory_ha: inventory_ha_dr/inventory_ha
@@ -212,6 +219,8 @@ At this point the secondary/DR machines are ready for failover and streaming rep
 
 #### HA Failover
 
+_only applicable if using an HA configuration_
+
 In the event of a database outage in the primary database the following playbook can be run to failover to the HA replica
 
 ```
@@ -238,13 +247,19 @@ ansible-playbook tower-ha-failover.yml -e 'tower_failback=1'
 ```
 #### DR Failover
 
+_only applicable if using a DR configuration_
+
 In the event of a primary datacenter outage, the playbook can be run to failover to the secondary database (including pointing to the DR replica)
 
 ```
 ansible-playbook tower-dr-failover.yml
 ```
 
-Once the primary datacenter has been repaired you must re-enable replication to synchronize data before failing back.  Also ensure the `database_replica` group has the repaired database host if you took it out before doing the DR failover.  The easiest way to enable the replication is to re-run the failover playbook.
+##### DR Failback
+
+###### Considerations
+
+Once the primary datacenter has been repaired you must re-enable replication to synchronize data before failing back.  Also ensure the `database_replica` group has the repaired database host if you took it out before doing the DR failover.  The easiest way to enable the replication is to re-run the failover playbook
 
 ```
 ansible-playbook tower-dr-failover.yml
@@ -255,6 +270,9 @@ This won't have any effect on the running cluster but will re-enable replication
 ```
 ansible-playbook -i INV_DIR/inventory_dr tower-setup-replication.yml
 ```
+
+
+###### Perform Failback
 
 to failback to the original configuration
 
