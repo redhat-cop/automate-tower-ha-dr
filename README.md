@@ -46,8 +46,12 @@ DR Failback
 - If there is no connectivity to the internet the bundle installation media will need to be placed in the `tower_installer` directory.  Please ensure the bundle is available before preceding.
 
 - The Ansible Tower installation inventory for each configuration will need to be defined.
+<<<<<<< HEAD
 
 - This toolkit and the playbook suite is meant to be run by a one user at a time and one playbook at a time.   For example, do not try running multiple instances of the `tower-setup-replication.yml` playbook from the same playbook_dir.  Issues can arise because a dynamic inventory script is used with a tmp file indicating which file to load.  This mechanism allows to effectively change the inventory during playbook execution.  
+=======
+- This toolkit and the playbook suite is meant to be run by one user at a time and one playbook at a time.   For example, do not try running multiple instances of the `tower-setup-replication.yml` playbook from the same playbook_dir.  Issues can arise because a dynamic inventory script is used with a tmp file indicating which file to load.  This mechanism allows to effectively change the inventory during playbook execution.  
+>>>>>>> fix grammar
 
 #### Setup
 
@@ -69,6 +73,8 @@ DR Failback
   - There should be no overlap between primary/HA and disaster recovery instance groups including the default `tower` instance group across inventory files,  This goes back to the discussion above that instance groups cannot span datacenters.   
 
   - Isolated instance groups will be unaffected by this process.  In a failover the isolated instance groups will remain unchanged. If one or more of the isolated instances is in the failed datacenter you may consider disabling them.
+  
+  - There should be no overlap between primary/HA and disaster recovery instance groups, including the default `tower` instance group, across inventory files.  This goes back to the discussion above that instance groups cannot span datacenters.   Isolated instance groups can be repeated if you wish to utilize existing isolated nodes.
 
   - The `database` and `database_replica` group membership should be unique across all inventory files.  The `database` group should have only one database and is the database in use the the given configuration.  The `database_replica` groups contain the streaming replicas to be configured.
 

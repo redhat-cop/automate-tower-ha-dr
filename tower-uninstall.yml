@@ -7,8 +7,7 @@
     pkgs_to_remove:
     - ansible-tower*
     - rabbitmq-server*
-    - postgresql96*
-    - python-psycopg2
+    - postgresql*
     dep_pkgs_to_remove:
     - ansible
     - python2-jmespath
@@ -31,7 +30,9 @@
     - perl-Error
     - perl-Git
     - perl-TermReadKey
-    - postgresql96
+    # postgresql96 and libs should be covered by pkgs_to_remove
+    #- postgresql96
+    #- postgresql96-libs
     - python-devel
     - python-meld3
     - python-virtualenv
@@ -40,17 +41,16 @@
     - subversion
     - subversion-libs
     - supervisor
-    - postgresql96-libs
     - python-psycopg2
     - setools-libs
-    dirs_to_remove:
-    - /var/lib/pgsql
-    - /var/lib/awx
-    - /var/lib/rabbitmq
+    files_to_remove:
     - /etc/tower
     - /var/log/tower
     - /etc/yum.repos.d/ansible-tower.repo
-
+    parent_dirs_to_remove:
+    - /var/lib/pgsql
+    - /var/lib/awx
+    - /var/lib/rabbitmq
   tasks:
   - name: ensure tower services are stopped
     command: ansible-tower-service stop
@@ -67,11 +67,32 @@
       state: absent
     when: uninstall_deps | default(false)
 
-  - name: remove dirs
+  - name: get awx dir list
+    find:
+      paths: "{{ parent_dirs_to_remove }}"
+      recurse: no
+      file_type: any
+    register: awx_paths
+
+  - name: set awx file list
+    set_fact:
+      awx_file_list: awx_paths.files | json_query('[*].path')
+
+  - name: cleanup files
     file:
       path: "{{ item }}"
       state: absent
-    with_items: "{{ dirs_to_remove }}"
+    with_items:
+      - "{{ files_to_remove }}"
+      - "{{ awx_file_list }}"
+
+  # handles case where top-level dir is a mountpoint
+  - name: cleanup parent directories
+    file:
+      path: "{{ item }}"
+      state: absent
+    with_items: "{{ parent_dirs_to_remove }}"
+    ignore_errors: yes
 
   - name: clean yum cache
     command: "{{ item }}"

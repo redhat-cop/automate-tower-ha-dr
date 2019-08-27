@@ -18,7 +18,7 @@ pgsqlrep_password=password4
 ansible_user = 'vagrant'
 ansible_password = 'vagrant'
 ansible_ssh_common_args='-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null'
-
+#ansible_become=true
 admin_password='password1'
 
 pg_host='10.26.10.21'

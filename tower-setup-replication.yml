@@ -63,6 +63,10 @@
   tasks:
   - name: HIGH LEVEL BLOCK TO DETERMINE IF DB FAILOVER IS MANAGED BY TOOLKIT
     block:
+    - name: Set bundle variable for postgres install
+      set_fact:
+        bundle_install: true
+      when: tower_bundle | bool
 
     - include_role:
         name: postgres_base
