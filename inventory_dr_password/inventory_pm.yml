@@ -1,0 +1,43 @@
+all:
+  children:
+    database_all:
+      children:
+        database:
+          hosts:
+            towerdb1:
+              ansible_ssh_host: 10.26.10.20
+        database_replica:
+          hosts:
+            towerdb2:
+              ansible_host: 10.26.10.21
+              pgsqlrep_type: remote
+      vars:
+        pgsqlrep_password: password4
+    tower:
+      hosts:
+        towervm1:
+          ansible_ssh_host: 10.26.10.50
+    ungrouped: {}
+  vars:
+    admin_password: password1
+    ansible_private_key_file: ~/.vagrant.d/insecure_private_key
+    ansible_become_password: !vault |
+      $ANSIBLE_VAULT;1.1;AES256
+      38613934353363613039636661626434313333643062346437363330343161326136663636333430
+      6464663734303664633361663763663265643635323838660a633463633162643330303932326464
+      36326164646539656336663730353534653239623639383634393130323337343839343034653136
+      6561313631346564640a396635336535616332313632646561633839353962653836363136363463
+      3537
+    ansible_ssh_common_args: -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null
+    ansible_user: vagrant
+    pg_database: awx
+    pg_host: 10.26.10.20
+    pg_password: password3
+    pg_port: '5432'
+    pg_username: awx
+    rabbitmq_cookie: cookiemonster
+    rabbitmq_password: password2
+    rabbitmq_port: 5672
+    rabbitmq_use_long_name: 'true'
+    rabbitmq_username: tower
+    rabbitmq_vhost: tower

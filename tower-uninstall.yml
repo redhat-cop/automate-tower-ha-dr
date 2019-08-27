@@ -8,6 +8,7 @@
     - ansible-tower*
     - rabbitmq-server*
     - postgresql96*
+    - python-psycopg2
     dep_pkgs_to_remove:
     - ansible
     - python2-jmespath
