@@ -37,7 +37,7 @@
       file:
         state: directory
         path: /etc/tower
-        mode: 0640
+        mode: 750
 
     - name: deploy secret to tower
       copy:
