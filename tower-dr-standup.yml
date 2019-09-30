@@ -1,6 +1,7 @@
 ---
 
-- hosts: localhost
+- name: obtain secret key from primary cluster
+  hosts: localhost
   gather_facts: no
   become: false
   vars:
@@ -8,48 +9,68 @@
   vars_files: tower-vars.yml
   tasks:
 
-  - include_role:
-      name: tower_inventory
-    vars:
-      tower_inventory_file: "{{ tower_inventory_pm }}"
+  - name: only run when using DR
+    block:
 
-  - include_role:
-      name: tower_secret_key
-    vars:
-      tower_secret_key_delegate: "{{groups['tower'][0]}}"
+    - name: point inventory to primary site
+      include_role:
+        name: tower_inventory
+      vars:
+        tower_inventory_file_var: tower_inventory_pm
+
+    - name: obtain secret key
+      include_role:
+        name: tower_secret_key
+      vars:
+        tower_secret_key_delegate: "{{ groups['tower'][0] }}"
+
+    when: tower_inventory_dr is defined 
 
 - name: setup inventory ensuring dr/secondary site and deploy key to DR
   hosts: localhost
   gather_facts: no
   vars_files: tower-vars.yml
   tasks:
-  - include_role:
-      name: tower_inventory
-    vars:
-      tower_inventory_file: "{{ tower_inventory_dr }}"
+
+  - name: only run when using DR
+    block: 
+
+    - name: point to to DR inventory
+      include_role:
+        name: tower_inventory
+      vars:
+        tower_inventory_file_var: tower_inventory_dr
+
+    when: tower_inventory_dr is defined
 
 - hosts: tower
   gather_facts: no
   become: true
   tasks:
 
+  - name: only run when using DR
+    block:
+    
     - name: ensure tower configuration
       file:
         state: directory
         path: /etc/tower
-        mode: 0640
+        mode: 0750
 
     - name: deploy secret to tower
       copy:
         content: "{{hostvars['localhost'].tower_secret_key}}"
         dest: "/etc/tower/SECRET_KEY"
-        mode: 0640
+        mode: 0750
+
     # adding this because installer fails this was left behind
     # and awx user and group was removed
     - name: remove extraneous tower log directory
       file:
         path: /var/log/tower
         state: absent
+
+    when: tower_inventory_dr is defined
 
 - name: setup inventory to configure replication
   hosts: localhost
@@ -59,7 +80,7 @@
   - include_role:
       name: tower_inventory
     vars:
-      tower_inventory_file: "{{ tower_inventory_pm }}"
+      tower_inventory_file_var: tower_inventory_pm
 
 - import_playbook: tower-setup-replication.yml
 

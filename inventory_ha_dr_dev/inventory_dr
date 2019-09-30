@@ -7,8 +7,6 @@ towerdb3 ansible_host="10.26.10.22"
 [database_replica]
 # previous primary datacenter
 towerdb1 ansible_host="10.26.10.20" pgsqlrep_type=remote
-# DR dc replica
-towerdb4 ansible_host="10.26.10.20" pgsqlrep_type=local
 
 [database_all:children]
 database

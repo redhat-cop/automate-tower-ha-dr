@@ -68,6 +68,7 @@
         bundle_install: true
       when: tower_bundle | bool
 
+    - debug: var=tower_installer_current
     - include_role:
         name: postgres_base
       when: not (pgsqlrep_install_skip | default(False) | bool)

@@ -8,6 +8,8 @@ import yaml
 
 TOWER_VARS_FILE = "tower-vars.yml"
 TOWER_INV_INI_FILE = ".tower_inventory.ini"
+TOWER_INV_ENV_KEY = "tower_environments"
+TOWER_INV_DEFAULT_KEY = "tower_default_environment"
 
 # run ansible-inventory on the correct inventory file
 def _get_inventory(inv_file):
@@ -36,15 +38,27 @@ def _get_inventory(inv_file):
 
     return json.dumps(inv)
 
-
+# pull inventory file locations
 def _get_inv_files(inv_path, tower_vars):
     tower_inventory_files = dict()
     tower_inventory_files['pm'] = dict(var_name='tower_inventory_pm', status=False)
     tower_inventory_files['ha'] = dict(var_name='tower_inventory_ha', status=False)
     tower_inventory_files['dr'] = dict(var_name='tower_inventory_dr', status=False)
 
+    if TOWER_INV_ENV_KEY not in tower_vars:
+        raise Exception(TOWER_INV_ENV_KEY + ' not found in tower vars')
+
+    if TOWER_INV_DEFAULT_KEY not in tower_vars:
+        raise Exception(TOWER_INV_DEFAULT_KEY + ' not found in tower vars')
+
+    tower_default_env = tower_vars[TOWER_INV_DEFAULT_KEY]
+    tower_selected_env = tower_vars[TOWER_INV_ENV_KEY][tower_default_env]
+
     for config, data in tower_inventory_files.items():
-        curr_inv_file = os.path.join(inv_path, tower_vars.get(data['var_name'],'__UNDEFINED__'))
+
+        inv_file = tower_selected_env.get(data['var_name'],'__UNDEFINED__')
+
+        curr_inv_file = os.path.join(inv_path, inv_file)
         if os.path.exists(curr_inv_file):
             tower_inventory_files[config]['location'] = curr_inv_file
             tower_inventory_files[config]['status'] = True
@@ -64,7 +78,7 @@ if __name__ == '__main__':
 
     args = parser.parse_args()
 
-    # assume inventory and vars files are at same path
+    # assume inventory and vars files are at same relative
     inv_path = os.path.dirname(os.path.abspath(__file__))
 
     # load tower vars file with info about failover configurations

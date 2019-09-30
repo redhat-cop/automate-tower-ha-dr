@@ -54,7 +54,7 @@
       include_role:
         name: tower_inventory
       vars:
-        tower_inventory_file: "{{ tower_inventory_pm }}"
+        tower_inventory_file_var: tower_inventory_pm
 
     - include_role:
         name: tower_install

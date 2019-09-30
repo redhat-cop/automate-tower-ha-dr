@@ -23,10 +23,17 @@ tower_download_url: "{{ tower_download_url_base }}/{{ tower_artifact }}"
 #get the current installer directory
 tower_installer_current: "{{ tower_installer_dir }}/{{ tower_artifact | regex_replace('.tar.gz') }}"
 
-# exclude tower_inventory_ha or tower_inventory_dr if only using one configuration
-tower_inventory_pm: inventory_ha_dr/inventory_pm
-tower_inventory_dr: inventory_ha_dr/inventory_dr
-tower_inventory_ha: inventory_ha_dr/inventory_ha
+# tower_default_environment: dev
+
+# tower_environments:
+#   dev:
+#     tower_inventory_pm: inventory_ha_dr_dev/inventory_pm
+#     tower_inventory_dr: inventory_ha_dr_dev/inventory_dr
+#     tower_inventory_ha: inventory_ha_dr_dev/inventory_ha
+#   uat:
+#     tower_inventory_pm: inventory_ha_dr_uat/inventory_pm
+#     tower_inventory_dr: inventory_ha_dr_uat/inventory_dr
+#     tower_inventory_ha: inventory_ha_dr_uat/inventory_ha
 
 # indicate whether the database is managed by the installer and toolkit or
 # provided as a service.  If set to true, all replication configuration is skipped

@@ -14,7 +14,7 @@
   vars_files: tower-vars.yml
   roles:
   - role: tower_inventory
-    tower_inventory_file: "{{ tower_inventory_dr if _tower_failback else tower_inventory_pm  }}"
+    tower_inventory_file_var: "{{ 'tower_inventory_dr' if _tower_failback else 'tower_inventory_pm'  }}"
 
 - import_playbook: tower-stop-services.yml
 
@@ -24,7 +24,7 @@
   gather_facts: no
   roles:
   - role: tower_inventory
-    tower_inventory_file: "{{ tower_inventory_pm if _tower_failback else tower_inventory_dr  }}"
+    tower_inventory_file_var: "{{ 'tower_inventory_pm' if _tower_failback else 'tower_inventory_dr'  }}"
 
 # when there is no replica, no action will be taken
 - import_playbook: tower-pgsql-promote.yml

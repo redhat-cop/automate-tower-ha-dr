@@ -1,3 +1,5 @@
+- debug: var=tower_installer_current
+
 - name: Find recovery.conf
   find:
     paths: /var/lib/pgsql
@@ -12,8 +14,8 @@
   with_items: "{{ recovery_conf_path.files }}"
 
 - name: import nginx role vars. TBD - only include specific vars file ??
-  import_role:
-    name: "{{tower_installer_current}}/roles/nginx"
+  include_role:
+    name: "{{ tower_installer_current }}/roles/nginx"
   vars:
     nginx_exec_vars_only: true
 
@@ -22,12 +24,12 @@
     file: "{{ tower_installer_current }}/group_vars/all"
 
 - name: Setup RedHat/CentOS repos for pg installation
-  import_role:
+  include_role:
     name: "{{tower_installer_current}}/roles/repos_el"
   when: ansible_os_family == "RedHat"
 
 - name: Install packages for RedHat/Centos skipping Tower
-  import_role:
+  include_role:
     name: "{{tower_installer_current}}/roles/packages_el"
   vars:
     packages_el_install_tower: false
@@ -35,8 +37,8 @@
   when: ansible_os_family == "RedHat"
 
 - name: Install postgres and setup replication.
-  import_role:
-    name: "{{tower_installer_current}}/roles/postgres"
+  include_role:
+    name: "{{ tower_installer_current }}/roles/postgres"
   vars:
     postgres_allowed_ipv4: "0.0.0.0/0"
     postgres_allowed_ipv6: "::/0"
@@ -51,7 +53,7 @@
     - postgresql_database
 
 - name: Setup firewall for postgres access
-  import_role:
+  include_role:
     name: "{{tower_installer_current}}/roles/firewall"
   vars:
     firewalld_http_port: "{{ nginx_http_port }}"

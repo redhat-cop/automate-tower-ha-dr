@@ -1,10 +1,31 @@
 ---
 
-- block:
-  - assert:
-      that: tower_inventory_file is defined
-      msg: tower_inventory_file must be passed
+- name: delegate everything to localhost
+  delegate_to: localhost
+  block:
 
+  - name: ensure vars are passed
+    assert:
+      that: 
+        - tower_inventory_file_var is defined
+      msg: tower_inventory_file_var must be passed
+
+  - set_fact:
+      tower_environment_def: "{{ lookup('vars', tower_environment_defs_var, default=false) }}"
+
+  - name: ensure environment definitions are present
+    assert:
+      that: tower_environment_def
+      msg: "No tower environments found in expected var: {{ tower_environment_defs_var }}"
+
+  - name: ensure requested environment exist
+    assert:
+      that: tower_selected_environment in tower_environment_def
+      msg: "Specified environment [{{ tower_selected_environment }}] not found in {{ tower_environment_defs_var }}"
+
+  - set_fact:
+      tower_inventory_file: "{{ tower_environment_def[tower_selected_environment][tower_inventory_file_var] }}"
+    
   - name: check inventory file
     stat:
       path: "{{ tower_inventory_file }}"
@@ -24,5 +45,3 @@
 
   - name: refresh_inventory
     meta: refresh_inventory
-
-  delegate_to: localhost

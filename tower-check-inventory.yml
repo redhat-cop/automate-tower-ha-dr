@@ -1,0 +1,44 @@
+---
+
+- hosts: localhost
+  gather_facts: no
+  vars_files: tower-vars.yml
+  tasks:
+
+  - include_role:
+      name: tower_inventory
+    vars:
+      tower_inventory_file_var: tower_inventory_pm
+
+  # - debug: var=tower_inventory_pm
+
+  # - debug: var=tower_inventory_base
+
+  # - debug: var=env['dev']
+  #   vars:
+  #     env: "{{ lookup('vars', tower_environment_defs_var) }}"
+
+  # - block:
+  #   - set_fact: 
+  #       tower_inventory_pm: "{{ tower_environments[default_env].inventory_pm }}"
+
+  #   - set_fact: 
+  #       tower_inventory_dr: "{{ tower_environments[default_env].inventory_dr }}"
+  #     when: "'inventory_dr' in tower_environments[default_env]"
+
+  #   - set_fact: 
+  #       tower_inventory_ha: "{{ tower_environments[default_env].inventory_ha }}"
+  #     when: "'inventory_dr' in tower_environments[default_env]"
+
+  #   when:
+  #   - default_env is defined
+  #   - tower_environments is defined
+  #   - default_env in tower_environments
+
+  #   #loop: "{{ tower_environments[default_env] | dict2items }}"
+
+  # - debug: var=tower_inventory_pm
+  # - debug: var=tower_inventory_dr
+  # - debug: var=tower_inventory_ha
+
+  # - debug: var=groups.all

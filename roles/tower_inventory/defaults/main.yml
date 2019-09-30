@@ -1,0 +1,4 @@
+---
+
+tower_environment_defs_var: tower_environments
+tower_selected_environment: "{{ tower_target | default( tower_default_environment) }}"
