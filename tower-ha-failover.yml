@@ -3,10 +3,21 @@
 - name: set fact for for failback flag
   hosts: all:localhost
   gather_facts: no
-  pre_tasks:
-  - name: set a local fact as boolean
+  vars_files: tower-vars.yml
+  vars:
+    tower_failback_bool: "{{ tower_failback | default(False) | bool }}"
+  tasks:
+  - name: set local facts for inventory
     set_fact:
-      _tower_failback: "{{ tower_failback | default(False) | bool }}"
+      tower_site_a_inventory: tower_inventory_ha
+      tower_site_b_inventory: tower_inventory_pm
+    when: tower_failback_bool
+
+  - name: set local facts for inventory
+    set_fact:
+      tower_site_a_inventory: tower_inventory_ha
+      tower_site_b_inventory: tower_inventory_pm
+    when: not tower_failback_bool
 
 - name: setup inventory to shutdown services
   hosts: localhost
@@ -14,7 +25,7 @@
   vars_files: tower-vars.yml
   roles:
   - role: tower_inventory
-    tower_inventory_file_var: "{{ 'tower_inventory_ha' if _tower_failback else 'tower_inventory_pm'  }}"
+    tower_inventory_file_var: "{{ tower_site_a_inventory  }}"
 
 - import_playbook: tower-stop-services.yml
 
@@ -24,7 +35,7 @@
   gather_facts: no
   roles:
   - role: tower_inventory
-    tower_inventory_file_var: "{{ 'tower_inventory_pm' if _tower_failback else 'tower_inventory_ha'  }}"
+    tower_inventory_file_var: "{{ tower_site_b_inventory }}"
 
 # when there is no replica, no action will be taken
 - import_playbook: tower-pgsql-promote.yml

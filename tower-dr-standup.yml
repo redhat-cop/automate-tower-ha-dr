@@ -1,5 +1,24 @@
 ---
 
+- name: set fact for for failback flag
+  hosts: all:localhost
+  gather_facts: no
+  vars_files: tower-vars.yml
+  vars:
+    tower_failback_bool: "{{ tower_failback | default(False) | bool }}"
+  tasks:
+  - name: set local facts for inventory
+    set_fact:
+      tower_site_a_inventory: tower_inventory_dr
+      tower_site_b_inventory: tower_inventory_pm
+    when: tower_failback_bool
+
+  - name: set local facts for inventory
+    set_fact:
+      tower_site_a_inventory: tower_inventory_pm
+      tower_site_b_inventory: tower_inventory_dr
+    when: not tower_failback_bool
+
 - name: obtain secret key from primary cluster
   hosts: localhost
   gather_facts: no
@@ -16,7 +35,7 @@
       include_role:
         name: tower_inventory
       vars:
-        tower_inventory_file_var: tower_inventory_pm
+        tower_inventory_file_var: "{{ tower_site_a_inventory }}"
 
     - name: obtain secret key
       include_role:
@@ -39,7 +58,7 @@
       include_role:
         name: tower_inventory
       vars:
-        tower_inventory_file_var: tower_inventory_dr
+        tower_inventory_file_var: "{{ tower_site_b_inventory }}"
 
     when: tower_inventory_dr is defined
 
@@ -80,7 +99,7 @@
   - include_role:
       name: tower_inventory
     vars:
-      tower_inventory_file_var: tower_inventory_pm
+      tower_inventory_file_var: "{{ tower_site_a_inventory }}"
 
 - import_playbook: tower-setup-replication.yml
 
