@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 import json
 import subprocess
@@ -37,7 +37,7 @@ def _get_inv_files(inv_path, tower_vars):
     tower_inventory_files['ha'] = dict(var_name='tower_inventory_ha', status=False)
     tower_inventory_files['dr'] = dict(var_name='tower_inventory_dr', status=False)
 
-    for config, data in tower_inventory_files.iteritems():
+    for config, data in tower_inventory_files.items():
         curr_inv_file = os.path.join(inv_path, tower_vars.get(data['var_name'],'__UNDEFINED__'))
         if os.path.exists(curr_inv_file):
             tower_inventory_files[config]['location'] = curr_inv_file
@@ -92,4 +92,4 @@ if __name__ == '__main__':
             inventory_file = inventory_file.strip()
             inventory_file = os.path.join(inv_path, inventory_file)
 
-    print _get_inventory(inventory_file)
+    print (_get_inventory(inventory_file))

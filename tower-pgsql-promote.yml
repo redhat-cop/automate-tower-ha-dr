@@ -11,7 +11,9 @@
 
     - name: Check recovery.conf
       stat:
-        path: /var/lib/pgsql/{{ pgsql_version }}/data/recovery.conf
+#        path: /var/lib/pgsql/{{ pgsql_version }}/data/recovery.conf
+# DEBUG
+        path: /var/lib/pgsql/data/recovery.conf
       register: recovery_conf
 
     - name: Exit if secondary is already promoted or not in standby mode
@@ -21,10 +23,14 @@
       ignore_errors: yes
 
     - name: Promote secondary PostgreSQL server to primary
-      command: /usr/pgsql-{{ pgsql_version }}/bin/pg_ctl promote
+#      command: /usr/pgsql-{{ pgsql_version }}/bin/pg_ctl promote
+# DEBUG
+      command: /usr/bin/pg_ctl promote
       become_user: postgres
       environment:
-        PGDATA: /var/lib/pgsql/{{ pgsql_version }}/data
+#        PGDATA: /var/lib/pgsql/{{ pgsql_version }}/data
+# DEBUG
+        PGDATA: /var/lib/pgsql/data
       ignore_errors: yes
       when: recovery_conf.stat.isreg is defined
 

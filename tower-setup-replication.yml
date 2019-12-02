@@ -83,6 +83,9 @@
     pgsqlrep_role: master
     pgsqlrep_master_address: "{{ _pgsqlrep_master_address }}"
     pgsqlrep_replica_address: "{{ _pgsqlrep_replica_address }}"
+# DEBUG
+    pgsqlrep_data_path: /var/lib/pgsql/data
+#
     when: not tower_db_external
 
 - name: Configure PSQL replica
@@ -94,6 +97,9 @@
     pgsqlrep_role: replica
     pgsqlrep_master_address: "{{ _pgsqlrep_master_address }}"
     pgsqlrep_replica_address: "{{ _pgsqlrep_replica_address }}"
+# DEBUG
+    pgsqlrep_data_path: /var/lib/pgsql/data
+#
     when: not tower_db_external
 
 

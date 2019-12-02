@@ -11,11 +11,11 @@
     state: absent
   with_items: "{{ recovery_conf_path.files }}"
 
-- name: import nginx role vars. TBD - only include specific vars file ??
-  import_role:
-    name: "{{tower_installer_current}}/roles/nginx"
-  vars:
-    nginx_exec_vars_only: true
+#- name: import nginx role vars. TBD - only include specific vars file ??
+#  import_role:
+#    name: "{{tower_installer_current}}/roles/nginx"
+#  vars:
+#    nginx_exec_vars_only: true
 
 - name: include vars normally in group vars all in the installer
   include_vars:
