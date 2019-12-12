@@ -37,7 +37,7 @@ def _get_inv_files(inv_path, tower_vars):
     tower_inventory_files['ha'] = dict(var_name='tower_inventory_ha', status=False)
     tower_inventory_files['dr'] = dict(var_name='tower_inventory_dr', status=False)
 
-    for config, data in tower_inventory_files.iteritems():
+    for config, data in tower_inventory_files.items():
         curr_inv_file = os.path.join(inv_path, tower_vars.get(data['var_name'],'__UNDEFINED__'))
         if os.path.exists(curr_inv_file):
             tower_inventory_files[config]['location'] = curr_inv_file
@@ -65,7 +65,7 @@ if __name__ == '__main__':
     vars_tower_file = os.path.join(inv_path, TOWER_VARS_FILE)
     if os.path.exists(vars_tower_file):
         with open(vars_tower_file) as tv:
-            tower_vars = yaml.load(tv.read())
+            tower_vars = yaml.load(tv.read(), Loader=yaml.Loader)
     else:
         raise Exception(vars_tower_file + " must be present and well-formed YAML")
 
@@ -92,4 +92,4 @@ if __name__ == '__main__':
             inventory_file = inventory_file.strip()
             inventory_file = os.path.join(inv_path, inventory_file)
 
-    print _get_inventory(inventory_file)
+    print(_get_inventory(inventory_file))
