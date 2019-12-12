@@ -1,0 +1,15 @@
+---
+  
+- name: setup inventory to configure replication
+  hosts: localhost
+  gather_facts: no
+  vars_files: tower-vars.yml
+  tasks:
+  - include_role:
+      name: tower_inventory
+    vars:
+      tower_inventory_file: "{{ tower_inventory_pm }}"
+
+- import_playbook: tower-setup-replication.yml
+
+- import_playbook: tower-check-replication.yml
