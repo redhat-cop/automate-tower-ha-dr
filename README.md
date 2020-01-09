@@ -41,7 +41,7 @@ DR Failback
 - **all Ansible Tower machines specified in inventory are pre-provisioned with authentication mechanism known (password, SSH keys)**
 - Ansible control machine (RHEL 7 or CentOS) available and configured with Ansible 2.7+
 
-- In order to use this toolkit you *must use key authentication*.  If you are not using the root account, need to escalate and escalation requires re-authorization you must put the `ansible_become_password` in your inventory files.  If you wish to vault values in your inventory file(s) you need to set the `tower_vault_file` variables in the `tower-vars.yml`.  You also need to append `--vault-password-file` to any playbook runs listed below.
+- In order to use this toolkit you *must use key authentication*.  If you are not using the root account, need to escalate and escalation requires re-authorization you must put the `ansible_become_password` in your inventory files.  If you wish to use vault values in your inventory file(s) you need to set the `tower_vault_file` variables in the `tower-vars.yml`.  You also need to append `--vault-password-file` to any playbook runs listed below.
 
 - If there is no connectivity to the internet the bundle installation media will need to be placed in the `tower_installer` directory.  Please ensure the bundle is available before preceding.
 
@@ -49,7 +49,7 @@ DR Failback
 
 - This toolkit and the playbook suite is meant to be run by a one user at a time and one playbook at a time.   For example, do not try running multiple instances of the `tower-setup-replication.yml` playbook from the same playbook_dir.  Issues can arise because a dynamic inventory script is used with a tmp file indicating which file to load.  This mechanism allows to effectively change the inventory during playbook execution.
 
-- This toolkit and the playbook suite is meant to be run by one user at a time and one playbook at a time.   For example, do not try running multiple instances of the `tower-setup-replication.yml` playbook from the same playbook_dir.  Issues can arise because a dynamic inventory script is used with a tmp file indicating which file to load.  This mechanism allows to effectively change the inventory during playbook execution.  
+- This toolkit and the playbook suite is meant to be run by one user at a time and one playbook at a time.   For example, do not try running multiple instances of the `tower-setup-replication.yml` playbook from the same playbook_dir.  Issues can arise because a dynamic inventory script is used with a tmp file indicating which file to load.  This mechanism allows you to effectively change the inventory during playbook execution.  
 
 #### Setup
 
@@ -68,13 +68,13 @@ DR Failback
 
   - You must define a primary inventory(`inventory_pm`) along with *_one or both_* of the HA inventory(`inventory_ha`) and DR inventory(`inventory_dr`)
 
-  - There should be no overlap between primary/HA and disaster recovery instance groups including the default `tower` instance group across inventory files,  This goes back to the discussion above that instance groups cannot span datacenters.   
+  - There should be no overlap between primary/HA and disaster recovery instance groups, including the default `tower` instance group, across inventory files. This goes back to the discussion above that instance groups cannot span datacenters.   
 
   - Isolated instance groups will be unaffected by this process.  In a failover the isolated instance groups will remain unchanged. If one or more of the isolated instances is in the failed datacenter you may consider disabling them.
   
   - There should be no overlap between primary/HA and disaster recovery instance groups, including the default `tower` instance group, across inventory files.  This goes back to the discussion above that instance groups cannot span datacenters.   Isolated instance groups can be repeated if you wish to utilize existing isolated nodes.
 
-  - The `database` and `database_replica` group membership should be unique across all inventory files.  The `database` group should have only one database and is the database in use the the given configuration.  The `database_replica` groups contain the streaming replicas to be configured.
+  - The `database` and `database_replica` group membership should be unique across all inventory files.  The `database` group should have only one database and is the database in use in the given configuration.  The `database_replica` groups contain the streaming replicas to be configured.
 
   - If an external database team is managing the Ansible Tower database and handling the replication and failover, the `database_replica` group can be excluded and the `tower_db_external` (explained below) to skip any replication configuration
 
@@ -192,7 +192,7 @@ DR Failback
   tower_db_external: false
   ```
 
-5. Run the `tower-setup.yml` playbook.  This playbook will take care of downloading the tower installation media for you installation (if it does not yet exist) and running the tower installer.  The version to be downloaded and/or used in the installation is found in the `tower-vars.yml` file.
+5. Run the `tower-setup.yml` playbook.  This playbook will take care of downloading the tower installation media for your installation (if it does not yet exist) and running the tower installer.  The version to be downloaded and/or used in the installation is found in the `tower-vars.yml` file.
 
   If you are running in a disconnected environment set the `tower_disconnected` variable to `true` and ensure the installer bundle is already downloaded.  For example for 3.3.1 ensure `tower-installer/ansible-tower-setup-bundle-3.3.1.el7.tar.gz` is in place
 
@@ -200,7 +200,7 @@ DR Failback
   ansible-playbook tower-setup.yml
   ```
 
-  If you want skip running Ansible Tower setup and only utilize this playbook to download the correct installer you can override the `tower_download_only` variable and run the playbook.
+  If you want skip running Ansible Tower setup and only utilize this playbook to download the correct installer, you can override the `tower_download_only` variable and run the playbook.
 
   ```
   ansible-playbook tower-setup.yml -e 'tower_download_only=1'
@@ -219,13 +219,13 @@ DR Failback
   ```
 
 
-At this point the secondary/DR machines are ready for failover and streaming replication enabled
+At this point the secondary/DR machines are ready for failover and streaming replication is enabled
 
 #### HA Failover
 
 _only applicable if using an HA configuration_
 
-In the event of a database outage in the primary database the following playbook can be run to failover to the HA replica
+In the event of a database outage in the primary database, the following playbook can be run to failover to the HA replica
 
 ```
 ansible-playbook tower-ha-failover.yml
@@ -301,7 +301,7 @@ Tower cluster nodes and database should be geographically co-located with low la
 
 **Database Availability**
 
-Ansible Tower utilizes PostgreSQL for application level data storage.  The Tower setup process does not configure streaming replica configuration/hot standby configurations, which can be used for disaster recovery or high availability solutions.  Streaming replication can be enabled and configured as a Red Hat Consulting delivered solution.  The Tower database can be replicated to high availability instance in the local datacenter and/or to a disaster recovery instance in a remote datacenter.  The later being utilized in a disaster recovery scenario.  In the case of a failure in only the local database, the high availability instance can be promoted to a primary instance and the Tower cluster updated to utilize the instance.  In the case of a full primary datacenter outage, the disaster recovery instance can be promoted to a primary instance a new Tower cluster deployed and pointed to the instance.   
+Ansible Tower utilizes PostgreSQL for application level data storage.  The Tower setup process does not configure streaming replica configuration/hot standby configurations, which can be used for disaster recovery or high availability solutions.  Streaming replication can be enabled and configured as a Red Hat Consulting delivered solution.  The Tower database can be replicated to a high availability instance in the local datacenter and/or to a disaster recovery instance in a remote datacenter.  The latter being utilized in a disaster recovery scenario.  In the case of a failure in only the local database, the high availability instance can be promoted to a primary instance and the Tower cluster updated to utilize the instance.  In the case of a full primary datacenter outage, the disaster recovery instance can be promoted to a primary instance a new Tower cluster deployed and pointed to the instance.   
 
 **Disaster Recovery**
 
