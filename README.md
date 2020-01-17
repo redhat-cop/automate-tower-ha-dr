@@ -1,3 +1,5 @@
+**NOTICE: THIS TOOLKIT DOES NOT WORK FOR TOWER VERSION 3.6**
+
 Configure High Availability and/or Disaster Recovery on a Tower Cluster
 ==
 
