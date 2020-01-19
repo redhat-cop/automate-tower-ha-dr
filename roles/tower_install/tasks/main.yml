@@ -3,7 +3,8 @@
 
 - name: determine if vault params in use
   set_fact:
-    tower_vault_params: "--vault-password-file={{playbook_dir}}/.vault-pass"
+#    tower_vault_params: "--vault-password-file={{playbook_dir}}/.vault-pass"
+    tower_vault_params: "--vault-password-file={{ tower_vault_file }}"
   when: tower_vault_file is defined
 
 - name: run tower installer for version {{ tower_version }}
