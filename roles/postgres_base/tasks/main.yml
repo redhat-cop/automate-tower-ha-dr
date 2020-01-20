@@ -21,6 +21,12 @@
   include_vars:
     file: "{{ tower_installer_current }}/group_vars/all"
 
+#
+- name: include postgresql vars
+  include_vars:
+    file: "{{ tower_installer_current }}/roles/postgres/vars/{{ ansible_os_family }}-{{ ansible_distribution_major_version }}.yml"
+#
+
 - name: Setup RedHat/CentOS repos for pg installation
   import_role:
     name: "{{tower_installer_current}}/roles/repos_el"
