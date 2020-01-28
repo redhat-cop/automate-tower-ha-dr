@@ -2,14 +2,15 @@
   service:
 #    name: postgresql-{{ pgsql_version }}
 # DEBUG
-    name: postgresql
+    name: "{{ pgsql_service_name }}"
     state: stopped
 
 - name: Clear out data directory
   shell: rm -rf {{ pgsqlrep_data_path }}/*
 
 - name: Create base backup
-  command: pg_basebackup -X stream -D {{ pgsqlrep_data_path }} -h {{ pgsqlrep_master_address }} -U {{ pgsqlrep_user }}
+#  command: pg_basebackup -X stream -D {{ pgsqlrep_data_path }} -h {{ pgsqlrep_master_address }} -U {{ pgsqlrep_user }}
+  shell: scl enable rh-postgresql10 -- pg_basebackup -X stream -D {{ pgsqlrep_data_path }} -h {{ pgsqlrep_master_address }} -U {{ pgsqlrep_user }}
   become: yes
   become_user: postgres
 
@@ -36,6 +37,6 @@
   service:
 #    name: postgresql-{{ pgsql_version }}
 # DEBUG
-    name: postgresql
+    name: "{{ pgsql_service_name }}"
     state: started
     enabled: yes

@@ -8,7 +8,8 @@
   when: tower_vault_file is defined
 
 - name: run tower installer for version {{ tower_version }}
-  command: "./setup.sh -i {{ tower_install_inventory }} {{ tower_install_extra_vars }} -- {{ tower_vault_params }}"
+#  command: "./setup.sh -i {{ tower_install_inventory }} {{ tower_install_extra_vars }} -- {{ tower_vault_params }} "
+  shell: "echo './setup.sh -i {{ tower_install_inventory }} {{ tower_install_extra_vars }} -- {{ tower_vault_params }} ' | scl enable rh-python36 - "
   args:
     chdir: "{{ tower_installer_current }}"
   environment:

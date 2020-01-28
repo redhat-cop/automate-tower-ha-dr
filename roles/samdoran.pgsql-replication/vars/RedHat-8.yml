@@ -1,0 +1,4 @@
+---
+pgsql_version_command: psql --version
+pgsql_service_name: postgresql-10
+pgsqlrep_data_path: /var/lib/pgsql/data

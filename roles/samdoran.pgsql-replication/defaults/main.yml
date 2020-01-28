@@ -1,7 +1,7 @@
 pg_port: 5432
 
 pgsqlrep_role: skip
-pgsqlrep_data_path: /var/lib/pgsql/{{ pgsql_version }}/data
+#pgsqlrep_data_path: /var/lib/pgsql/{{ pgsql_version }}/data
 pgsqlrep_user: replicator
 #pgsqlrep_password: '' # Store this in an Ansible vault
 pgsqlrep_wal_level: hot_standby

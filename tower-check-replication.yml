@@ -12,7 +12,8 @@
     block:
     - name: check replication status and latency
       #FROM ED pg_last_xlog_receive_location() = pg_last_xlog_replay_location() THEN 0
-      command: psql -U postgres -t -c "select extract(epoch from now() - pg_last_xact_replay_timestamp());"
+#      command: psql -U postgres -t -c "select extract(epoch from now() - pg_last_xact_replay_timestamp());"
+      shell: scl enable rh-postgresql10 -- psql -U postgres -t -c "select extract(epoch from now() - pg_last_xact_replay_timestamp());"
       register: replication_latency
       changed_when: false
 
@@ -22,7 +23,8 @@
       failed_when: replication_latency.stdout | float > replication_time_threshold
 
     - name: ensure replica is in recovery mode
-      command: psql -U postgres -t -c "select pg_is_in_recovery();"
+#      command: psql -U postgres -t -c "select pg_is_in_recovery();"
+      shell: scl enable rh-postgresql10 -- psql -U postgres -t -c "select pg_is_in_recovery();"
       register: recovery_mode
       changed_when: false
 
@@ -44,7 +46,8 @@
     block:
 
     - name: ensure master is not in recovery mode
-      command: psql -U postgres -t -c "select pg_is_in_recovery();"
+#      command: psql -U postgres -t -c "select pg_is_in_recovery();"
+      shell: scl enable rh-postgresql10 -- psql -U postgres -t -c "select pg_is_in_recovery();"
       register: recovery_mode
       changed_when: false
 
