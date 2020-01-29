@@ -1,4 +1,7 @@
 ---
 pgsql_version_command: "scl enable rh-postgresql10 -- psql --version"
+pgsql_psql_command: "scl enable rh-postgresql10 -- psql"
+pgsql_pg_ctl_command: "scl enable rh-postgresql10 -- pg_ctl"
+pgsql_pg_basebackup_command: scl enable rh-postgresql10 -- pg_basebackup
 pgsql_service_name: rh-postgresql10-postgresql.service
 pgsqlrep_data_path: /var/opt/rh/rh-postgresql10/lib/pgsql/data

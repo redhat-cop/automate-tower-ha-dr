@@ -2,5 +2,5 @@
   service:
 #    name: postgresql-{{ pgsql_version }}
 # DEBUG
-    name: postgresql
+    name:  "{{ pgsql_service_name }}"
     state: restarted

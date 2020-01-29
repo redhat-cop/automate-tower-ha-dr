@@ -13,7 +13,7 @@
       stat:
 #        path: /var/lib/pgsql/{{ pgsql_version }}/data/recovery.conf
 # DEBUG
-        path: /var/lib/pgsql/data/recovery.conf
+        path: "{{ pgsqlrep_data_path }}/recovery.conf"
       register: recovery_conf
 
     - name: Exit if secondary is already promoted or not in standby mode
@@ -25,17 +25,17 @@
     - name: Promote secondary PostgreSQL server to primary
 #      command: /usr/pgsql-{{ pgsql_version }}/bin/pg_ctl promote
 # DEBUG
-      command: /usr/bin/pg_ctl promote
+      shell: "{{ pgsql_pg_ctl_command }} promote"
       become_user: postgres
       environment:
 #        PGDATA: /var/lib/pgsql/{{ pgsql_version }}/data
 # DEBUG
-        PGDATA: /var/lib/pgsql/data
+        PGDATA: "{{ pgsqlrep_data_path }}"
       ignore_errors: yes
       when: recovery_conf.stat.isreg is defined
 
     - name: ensure replica is not in recovery mode
-      command: psql -U postgres -t -c "select pg_is_in_recovery();"
+      shell: '{{ pgsql_psql_command }} -U postgres -t -c "select pg_is_in_recovery();"'
       register: recovery_mode
       changed_when: false
       become_user: postgres

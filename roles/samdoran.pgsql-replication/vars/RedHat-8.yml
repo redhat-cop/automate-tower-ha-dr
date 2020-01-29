@@ -1,4 +1,7 @@
 ---
 pgsql_version_command: psql --version
+pgsql_psql_command: psql
+pgsql_pg_ctl_command: pg_ctl
+pgsql_pg_basebackup_command: pg_basebackup
 pgsql_service_name: postgresql-10
 pgsqlrep_data_path: /var/lib/pgsql/data
