@@ -3,7 +3,11 @@
 Configure High Availability and/or Disaster Recovery on a Tower Cluster
 ==
 
-**Reference Architecture**
+**Supportability**
+
+This toolkit is not offically supported by Red Hat Ansible support/engineering and is provided as is.  It is inteneded a starting point for a Red Hat Consulting delivery of Ansible Tower.
+
+**Solution Reference Architecture**
 ![Ref Arch](readme_images/TowerClusterReferenceArch.png "Ref Arch")
 
 This diagram represents the reference architecture for a full high availability and disaster recovery solution.  This solution can be individually tailored to address a single availability solution.  For example, if only disaster recovery is needed the configuration supports exclusion of the HA replica.
