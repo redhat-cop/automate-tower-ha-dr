@@ -62,8 +62,8 @@ DR Failback
 1. Clone this repository to the configure Ansible control machine and enter directory
 
   ```
-  git clone ssh://git@gitlab.consulting.redhat.com:2222/towerrescue/ansible_tower_setup.git
-  cd ansible_tower_setup
+  git clone https://github.com/redhat-cop/automate-tower-ha-dr.git
+  cd automate-tower-ha-dr
   ```
 
 2. Create a directory for your Tower installation inventories.  Create the appropriate `inventory_pm`, `inventory_ha` and `inventory_dr` Tower installation inventory files in the directory.  Examples are provided in the [inventory_dr_static](inventory_dr_static) and [inventory_ha_dr](inventory_ha_dr) directories of this repository.
