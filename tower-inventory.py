@@ -36,6 +36,7 @@ def _get_inv_files(inv_path, tower_vars):
     tower_inventory_files['pm'] = dict(var_name='tower_inventory_pm', status=False)
     tower_inventory_files['ha'] = dict(var_name='tower_inventory_ha', status=False)
     tower_inventory_files['dr'] = dict(var_name='tower_inventory_dr', status=False)
+    tower_inventory_files['drha'] = dict(var_name='tower_inventory_dr_ha', status=False)
 
     for config, data in tower_inventory_files.items():
         curr_inv_file = os.path.join(inv_path, tower_vars.get(data['var_name'],'__UNDEFINED__'))
