@@ -45,13 +45,14 @@
       set_fact:
         _pgsqlrep_master_address: "{{ groups['database'][0] | infer_address(hostvars) }}"
         _pgsqlrep_replica_address: "{{ groups['database_replica'] | map('infer_address', hostvars) | list }}"
+        _pgsqlrep_pg_host_address: "{{ pg_host | infer_address(hostvars) }}"
 
     - name: PostgreSQL streaming replication pre-preflight check. Contd
       block:
         - name: ensure pg_host has value of master database
           fail:
             msg: "pg_host does not match master"
-          when: pg_host != _pgsqlrep_master_address
+          when: _pgsqlrep_pg_host_address != _pgsqlrep_master_address
       delegate_to: localhost
       run_once: true
     when: not tower_db_external
