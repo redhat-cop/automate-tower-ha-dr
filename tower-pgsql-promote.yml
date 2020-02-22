@@ -2,16 +2,33 @@
 
 - name: Promote secondary HA/DR database to primary
   hosts: database
+  vars_files: tower-vars.yml
   become: true
   tasks:
+
+    - name: import postgres role vars
+      import_role:
+        name: "{{tower_installer_current}}/roles/postgres"
+      vars:
+        postgres_exec_vars_only: true
+
+    - set_fact:
+        pg_conf_bin_inferred: "{{ pg_initdb_command | dirname }}"
+
+    - set_fact:
+        pg_bash: ""
+      when: pg_bash is not defined
+
     - name: Get the current PostgreSQL version
       import_role:
         name: samdoran.pgsql-replication
         tasks_from: pgsql_version.yml
+      vars:
+        pgsqlrep_bash: "{{ pg_bash }}"
 
     - name: Check recovery.conf
       stat:
-        path: /var/lib/pgsql/{{ pgsql_version }}/data/recovery.conf
+        path: "{{ pg_conf_dir }}/recovery.conf"
       register: recovery_conf
 
     - name: Exit if secondary is already promoted or not in standby mode
@@ -21,15 +38,13 @@
       ignore_errors: yes
 
     - name: Promote secondary PostgreSQL server to primary
-      command: /usr/pgsql-{{ pgsql_version }}/bin/pg_ctl promote
+      command: "{{ pg_conf_bin_inferred }}/pg_ctl promote -D {{ pg_conf_dir }}"
       become_user: postgres
-      environment:
-        PGDATA: /var/lib/pgsql/{{ pgsql_version }}/data
       ignore_errors: yes
       when: recovery_conf.stat.isreg is defined
 
     - name: ensure replica is not in recovery mode
-      command: psql -U postgres -t -c "select pg_is_in_recovery();"
+      command: '{{ pg_bash }} psql -U postgres -t -c "select pg_is_in_recovery();"'
       register: recovery_mode
       changed_when: false
       become_user: postgres
