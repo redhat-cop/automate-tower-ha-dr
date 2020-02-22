@@ -1,10 +1,18 @@
 ---
 
 - uri:
-    method: GET
+    method: "{{ tower_api_method }}"
     user: "{{ tower_api_user }}"
     password: "{{ tower_api_password }}"
-    validate_certs: False
-    status_code: [ 200, 201 ]
-    force_basic_auth: yes
-    url: ""
+    validate_certs: "{{ tower_api_validate_certs }}"
+    status_code: "{{ tower_api_status_codes }}"
+    force_basic_auth: "{{ tower_api_basic_auth }}"
+    url: "{{ tower_api_base }}/{{ tower_api_endpoint }}"
+  register: tower_api_results
+
+- set_fact:
+    "{{ tower_api_return_var }}": "{{ tower_api_results.json.results }}"
+
+- debug:
+    msg: "{{ lookup('vars', tower_api_return_var) }}"
+    verbosity: 2
