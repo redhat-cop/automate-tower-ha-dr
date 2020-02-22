@@ -36,14 +36,13 @@
     _tower_eng_failover: "{{ tower_eng_failover | default(False) | bool }}"
   tasks:
 
-  - block:
+  - name: Normal failover mechansim. Installer rerun
+    block:
     - include_role:
         name: tower_install
       vars:
         tower_install_inventory: "{{ ansible_inventory_sources[0] }}"
         tower_install_directory: "{{ tower_installer_current }}"
-        tower_install_skip_run: "{{ tower_install_skip }}"
-        tower_install_ram_override: "{{ tower_ram_override }}"
     delegate_to: localhost
     run_once: true
     when: not _tower_eng_failover
