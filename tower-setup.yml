@@ -4,41 +4,34 @@
   connection: local
   vars_files: tower-vars.yml
   vars:
-    tower_download_only: false
+    tower_download: false
     tower_download_force: false
   tasks:
 
-  - name: offline install
-    block:
+  - name: ensure installer directory is present
+    file:
+      path: "{{ tower_installer_dir }}"
+      state: directory
 
-    - name: ensure installer already exists
-      stat:
-        path: "{{ tower_installer_dir }}/{{ tower_artifact }}"
-      register: artifact_status
-      failed_when: not artifact_status.stat.exists
-    when: tower_disconnected | bool
+  - name: download tower installer
+    get_url:
+      url: "{{ tower_download_url }}"
+      dest: "{{ tower_installer_dir }}/{{ tower_artifact }}"
+      mode: 0644
+      force: "{{ tower_download_force | bool }}"
+    when: tower_download
 
-  - name: online install
-    block:
-    - name: ensure installer directory is present
-      file:
-        path: "{{ tower_installer_dir }}"
-        state: directory
-
-    - name: download tower installer
-      get_url:
-        url: "{{ tower_download_url }}"
-        dest: "{{ tower_installer_dir }}/{{ tower_artifact }}"
-        mode: 0644
-        force: "{{ tower_download_force }}"
-
-    when: not tower_disconnected | bool
+  - name: ensure installer already exists
+    stat:
+      path: "{{ tower_installer_dir }}/{{ tower_artifact }}"
+    register: artifact_status
+    failed_when: not artifact_status.stat.exists
 
   - name: extract installer
     command: "tar xzf {{ tower_artifact }}"
     args:
       chdir: "{{ tower_installer_dir }}"
-      creates: "{{ tower_installer_current}}"
+      creates: "{{ playbook_dir }}/{{ tower_installer_current }}"
 
     # issues with running on macos with unarchive module
     # unarchive:
@@ -56,12 +49,10 @@
       vars:
         tower_inventory_file: "{{ tower_inventory_pm }}"
 
-    - include_role:
+    - name: run tower installer
+      include_role:
         name: tower_install
       vars:
         tower_install_inventory: "{{ ansible_inventory_sources[0] }}"
         tower_install_directory: "{{ tower_installer_current }}"
-        tower_install_skip_run: "{{ tower_install_skip }}"
         tower_install_ram_override: "{{ tower_ram_override }}"
-
-    when: not tower_download_only

@@ -1,30 +1,10 @@
 ---
 
-- name: set fact for for failback flag
-  hosts: all:localhost
-  gather_facts: no
-  pre_tasks:
-  - name: set a local fact as boolean
-    set_fact:
-      _tower_failback: "{{ tower_failback | default(False) | bool }}"
-
-- name: setup inventory to shutdown services
-  hosts: localhost
-  gather_facts: no
-  vars_files: tower-vars.yml
-  roles:
-  - role: tower_inventory
-    tower_inventory_file: "{{ tower_inventory_dr if _tower_failback else tower_inventory_pm  }}"
+- import_playbook: tower-set-inventory-pm.yml
 
 - import_playbook: tower-stop-services.yml
 
-- name: setup inventory for backup site or primary site in failback
-  hosts: localhost
-  vars_files: tower-vars.yml
-  gather_facts: no
-  roles:
-  - role: tower_inventory
-    tower_inventory_file: "{{ tower_inventory_pm if _tower_failback else tower_inventory_dr  }}"
+- import_playbook: tower-set-inventory-dr.yml
 
 # when there is no replica, no action will be taken
 - import_playbook: tower-pgsql-promote.yml
@@ -36,30 +16,30 @@
     _tower_eng_failover: "{{ tower_eng_failover | default(False) | bool }}"
   tasks:
 
-  - block:
-    - include_role:
-        name: tower_install
-      vars:
-        tower_install_inventory: "{{ ansible_inventory_sources[0] }}"
-        tower_install_directory: "{{ tower_installer_current }}"
-        tower_install_skip_run: "{{ tower_install_skip }}"
-        tower_install_ram_override: "{{ tower_ram_override }}"
-    delegate_to: localhost
-    run_once: true
-    when: not _tower_eng_failover
+    - name: normal Tower installer setup run for failover
+      block:
+      - include_role:
+          name: tower_install
+        vars:
+          tower_install_inventory: "{{ ansible_inventory_sources[0] }}"
+          tower_install_directory: "{{ tower_installer_current }}"
+          tower_install_ram_override: "{{ tower_ram_override }}"
+      delegate_to: localhost
+      run_once: true
+      when: not _tower_eng_failover
 
-  - name: shortcut/engineering cluster failover
-    block:
-    - name: point tower to new master database
-      include_role:
-        name: tower_db_active
+    - name: shortcut/engineering cluster failover
+      block:
+      - name: point tower to new master database
+        include_role:
+          name: tower_db_active
 
-    - name: perform rabbitmq and cluster setup
-      include_role:
-        name: tower_cluster
+      - name: perform rabbitmq and cluster setup
+        include_role:
+          name: tower_cluster
 
-    when: _tower_eng_failover
-    become: true
+      when: _tower_eng_failover
+      become: true
 
 - import_playbook: tower-deprovision.yml
 

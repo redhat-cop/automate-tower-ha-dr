@@ -1,15 +1,26 @@
 pg_port: 5432
 
+pgsqlrep_bash: ""
+
+pgsqlrep_service: "postgresql-{{ pgsql_version }}"
+
 pgsqlrep_role: skip
+pgsqlrep_state: apply
 pgsqlrep_data_path: /var/lib/pgsql/{{ pgsql_version }}/data
 pgsqlrep_user: replicator
 #pgsqlrep_password: '' # Store this in an Ansible vault
 pgsqlrep_wal_level: hot_standby
+pgsqlrep_wal_level_default: minimal
+
+
 pgsqlrep_max_wal_senders: "{{ groups[pgsqlrep_group_name] | length * 2 }}"
+pgsqlrep_max_wal_senders_default: 0
 pgsqlrep_wal_keep_segments: 100
+pgsqlrep_wal_keep_segments_default: 0
 pgsqlrep_synchronous_commit: local
+pgsqlrep_synchronous_commit_default: on
 pgsqlrep_application_name: awx
-bundle_install: False
+#bundle_install: False
 
 pgsqlrep_group_name: database_replica
 pgsqlrep_group_name_master: database
@@ -18,17 +29,37 @@ pgsqlrep_master_address: "{{ hostvars[groups[pgsqlrep_group_name_master][0]].ans
 pgsqlrep_replica_address: "{{ groups[pgsqlrep_group_name] | map('extract', hostvars, 'ansible_default_ipv4') | map(attribute='address') | list }}"
 
 pgsqlrep_postgres_conf_lines:
-  - regexp: '#?wal_level = \w+(\s+#.*)'
-    line: 'wal_level = {{ pgsqlrep_wal_level }}\1'
+  - apply:
+      regexp: '#?wal_level = \w+(\s+#.*)'
+      line: 'wal_level = {{ pgsqlrep_wal_level }}\1'
+    revert:
+      regexp: 'wal_level = {{ pgsqlrep_wal_level }}(\s+#.*)'
+      line: '#wal_level = {{ pgsqlrep_wal_level_default }}\1'
 
-  - regexp: '#?max_wal_senders = \d+(\s+#.*)'
-    line: 'max_wal_senders = {{ pgsqlrep_max_wal_senders }}\1'
+  - apply:
+      regexp: '#?max_wal_senders = \d+(\s+#.*)'
+      line: 'max_wal_senders = {{ pgsqlrep_max_wal_senders }}\1'
+    revert:
+      regexp: 'max_wal_senders = {{ pgsqlrep_max_wal_senders }}(\s+#.*)'
+      line: '#max_wal_senders = {{ pgsqlrep_max_wal_senders_default }}\1'
+    
+  - apply:
+      regexp: '#?wal_keep_segments = .*(\s+#.*)'
+      line: 'wal_keep_segments = {{ pgsqlrep_wal_keep_segments }}\1'
+    revert:
+      regexp: 'wal_keep_segments = {{ pgsqlrep_wal_keep_segments }}(\s+#.*)'
+      line: '#wal_keep_segments = {{ pgsqlrep_wal_keep_segments_default }}\1'
 
-  - regexp: '#?wal_keep_segments = .*(\s+#.*)'
-    line: 'wal_keep_segments = {{ pgsqlrep_wal_keep_segments }}\1'
+  - apply:
+      regexp: '#?synchronous_standby_names = .*(\s+#.*)'
+      line: "synchronous_standby_names = '{{ pgsqlrep_application_name }}'\\1"
+    revert:
+      regexp: "synchronous_standby_names = '{{ pgsqlrep_application_name }}'(\\s+#.*)"
+      line: "#synchronous_standby_names = ''\\1"
 
-  - regexp: '#?synchronous_standby_names = .*'
-    line: "synchronous_standby_names = '{{ pgsqlrep_application_name }}'"
-
-  - regexp: '#?synchronous_commit = \w+(\s+#.*)'
-    line: 'synchronous_commit = {{ pgsqlrep_synchronous_commit }}\1'
+  - apply:
+      regexp: '#?synchronous_commit = \w+(\s+#.*)'
+      line: 'synchronous_commit = {{ pgsqlrep_synchronous_commit }}\1'
+    revert:
+      regexp: 'synchronous_commit = {{ pgsqlrep_synchronous_commit }}(\s+#.*)'
+      line: 'synchronous_commit = {{ pgsqlrep_synchronous_commit_default }}\1'

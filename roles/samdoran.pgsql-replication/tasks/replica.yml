@@ -1,37 +1,61 @@
-- name: Stop PostgreSQL
-  service:
-    name: postgresql-{{ pgsql_version }}
-    state: stopped
+- name: apply replica configuration block
+  block:
+    - name: Stop PostgreSQL
+      service:
+        name: "{{ pgsqlrep_service }}"
+        state: stopped
 
-- name: Clear out data directory
-  shell: rm -rf {{ pgsqlrep_data_path }}/*
+    - name: Clear out data directory
+      shell: rm -rf {{ pgsqlrep_data_path }}/*
 
-- name: Create base backup
-  command: pg_basebackup -X stream -D {{ pgsqlrep_data_path }} -h {{ pgsqlrep_master_address }} -U {{ pgsqlrep_user }}
-  become: yes
-  become_user: postgres
+    - name: Create base backup
+      command: "{{ pgsqlrep_bash }} pg_basebackup -X stream -D {{ pgsqlrep_data_path }} -h {{ pgsqlrep_master_address }} -U {{ pgsqlrep_user }}"
+      become: yes
+      become_user: postgres
 
-- name: Create recovery.conf
-  template:
-    src: recovery.conf.j2
-    dest: "{{ pgsqlrep_data_path }}/recovery.conf"
-    owner: postgres
-    group: postgres
-    mode: 0644
+    - name: Create recovery.conf
+      template:
+        src: recovery.conf.j2
+        dest: "{{ pgsqlrep_data_path }}/recovery.conf"
+        owner: postgres
+        group: postgres
+        mode: 0644
 
-- name: Enable hot standby
-  lineinfile:
-    state: present
-    backup: yes
-    dest: "{{ pgsqlrep_data_path }}/postgresql.conf"
-    regexp: '^#?hot_standby = \w+(\s+#.*)'
-    line: 'hot_standby = yes\1'
-    backrefs: yes
-  become: yes
-  become_user: postgres
+    - name: Enable hot standby
+      lineinfile:
+        state: present
+        backup: yes
+        dest: "{{ pgsqlrep_data_path }}/postgresql.conf"
+        regexp: '^#?hot_standby = \w+(\s+#.*)'
+        line: 'hot_standby = yes\1'
+        backrefs: yes
+      become: yes
+      become_user: postgres
 
-- name: Start and enable PostgreSQL
-  service:
-    name: postgresql-{{ pgsql_version }}
-    state: started
-    enabled: yes
+    - name: Start and enable PostgreSQL
+      service:
+        name: "{{ pgsqlrep_service  }}"
+        state: started
+        enabled: yes
+  when: pgsqlrep_state == 'apply'
+
+- name: revert replica configuration block
+  block:
+
+    - name: remove recovery.conf
+      file:
+        path: "{{ pgsqlrep_data_path }}/recovery.conf"
+        state: absent
+
+    - name: disable hot standby
+      lineinfile:
+        state: present
+        backup: yes
+        dest: "{{ pgsqlrep_data_path }}/postgresql.conf"
+        regexp: 'hot_standby = yes(\s+#.*)'
+        line: '#hot_standby = no\1'
+        backrefs: yes
+      become: yes
+      become_user: postgres
+
+  when: pgsqlrep_state == 'revert'

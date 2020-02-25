@@ -1,0 +1,26 @@
+- name: Configure master server
+  lineinfile:
+    state: present
+    backrefs: yes
+    dest: "{{ pgsqlrep_data_path }}/postgresql.conf"
+    regexp: "{{ item.regexp }}"
+    line: "{{ item.line }}"
+  with_items: "{{ pgsqlrep_postgres_conf_lines }}"
+  notify: restart postgresql
+
+- name: Create replication user account
+  postgresql_user:
+    name: "{{ pgsqlrep_user }}"
+    password: "{{ pgsqlrep_password }}"
+    role_attr_flags: replication
+  become: True
+  become_user: postgres
+
+- name: Add trust in pg_hba.conf
+  lineinfile:
+    state: present
+    dest: "{{ pgsqlrep_data_path }}/pg_hba.conf"
+    regexp: 'host.*replication.*{{ item }}/32.*trust'
+    line: 'host    replication    {{ pgsqlrep_user }}  {{ item }}/32 trust'
+  with_items: "{{ pgsqlrep_replica_address }}"
+  notify: restart postgresql

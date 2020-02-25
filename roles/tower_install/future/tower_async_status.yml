@@ -1,0 +1,15 @@
+---
+
+- pause:
+    seconds: 10
+
+- name: get end of tower log file
+  command: "tail -n 10 {{ tower_installer_current }}/setup.log"
+  register: tower_install_log
+
+- debug:
+    msg: "{{ tower_install_log.stdout }}"
+
+- async_status:
+    jid: "{{ tower_install_status.ansible_job_id }}"
+  register: tower_install_async_status

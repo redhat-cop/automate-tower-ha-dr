@@ -1,0 +1,3 @@
+---
+
+pgsqlrep_type_list: [ 'local', 'remote' ]

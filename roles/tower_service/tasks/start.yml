@@ -1,0 +1,13 @@
+---
+
+- name: tower start block
+  become: true
+  block:
+  
+  - wait_for_connection:
+      timeout: 30
+      sleep: 2
+    register: tower_available
+
+  - name: Start tower
+    command: ansible-tower-service start

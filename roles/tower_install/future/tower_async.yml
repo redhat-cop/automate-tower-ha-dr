@@ -1,0 +1,25 @@
+---
+
+# NOTE must change directory to pickup roles and host/group vars
+- name: run tower installer for version {{ tower_version }}
+  command: "./setup.sh -i {{ tower_install_inventory }} {{ tower_install_extra_vars }} -- {{ tower_vault_params }}"
+  args:
+    chdir: "{{ tower_installer_current }}"
+  environment:
+    ANSIBLE_BECOME_METHOD: sudo
+    ANSIBLE_BECOME: True
+  register: tower_install_status
+  ignore_errors: yes
+  when: not (tower_install_skip | bool)
+  async: 1800
+  poll: 0
+
+- async_status:
+    jid: "{{ tower_install_status.ansible_job_id }}"
+  register: tower_install_async_status
+
+- include_tasks: tower_async_status.yml
+  until: tower_install_async_status.finished | bool
+
+
+  
