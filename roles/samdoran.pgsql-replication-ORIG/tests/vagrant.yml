@@ -1,0 +1,13 @@
+- name: Gather facts
+  hosts: all
+  gather_facts: yes
+
+- name: Install Ansible Tower
+  hosts: tower[0]
+  gather_facts: yes
+  become: yes
+
+  tasks:
+    - import_role:
+        name: "{{ playbook_dir }}/ansible-tower"
+
