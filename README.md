@@ -5,7 +5,7 @@ Configure High Availability and/or Disaster Recovery on a Tower Cluster
 
 **Supportability**
 
-This toolkit is not offically supported by Red Hat Ansible support/engineering and is provided as is.  It is inteneded a starting point for a Red Hat Consulting delivery of Ansible Tower.
+This toolkit is not officially supported by Red Hat Ansible support/engineering and is provided as is.  It is intended a starting point for a Red Hat Consulting delivery of Ansible Tower.
 
 **Solution Reference Architecture**
 ![Ref Arch](readme_images/TowerClusterReferenceArch.png "Ref Arch")
@@ -45,11 +45,14 @@ DR Failback
 #### Assumptions/Prerequisites
 
 - **all Ansible Tower machines specified in inventory are pre-provisioned with authentication mechanism known (password, SSH keys)**
-- Ansible control machine (RHEL 7 or CentOS) available and configured with Ansible 2.7+
+
+- **only the Ansible Tower bundled installer is supported**
+
+- Ansible control machine (RHEL 7/8 or CentOS 7/8) available and configured with *Ansible 2.8+*
 
 - In order to use this toolkit you *must use key authentication*.  If you are not using the root account, need to escalate and escalation requires re-authorization you must put the `ansible_become_password` in your inventory files.  If you wish to vault values in your inventory file(s) you need to set the `tower_vault_file` variables in the `tower-vars.yml`.  You also need to append `--vault-password-file` to any playbook runs listed below.
 
-- If there is no connectivity to the internet the bundle installation media will need to be placed in the `tower_installer` directory.  Please ensure the bundle is available before preceding.
+- The bundle installation media will need to be placed in the `tower_installer` directory.  Please ensure the bundle is available before preceding.
 
 - The Ansible Tower installation inventory for each configuration will need to be defined.
 
@@ -82,7 +85,7 @@ DR Failback
 
   - The `database` and `database_replica` group membership should be unique across all inventory files.  The `database` group should have only one database and is the database in use the the given configuration.  The `database_replica` groups contain the streaming replicas to be configured.
 
-  - If an external database team is managing the Ansible Tower database and handling the replication and failover, the `database_replica` group can be excluded and the `tower_db_external` (explained below) to skip any replication configuration
+  - If an external database team is managing the Ansible Tower database and handling the replication and failover, the `database_replica` group can be excluded and  `tower_db_external` set to `true`  (explained below) to skip any replication configuration
 
   - The example inventory files show various configurations for setting up replication in a failover scenario.
 
@@ -179,13 +182,10 @@ DR Failback
 
   ```
   # version of Ansible Tower to install/working with
-  tower_version: 3.4.3-1
+  tower_version: 3.6.3-1
 
-  # determine if the bundle is being used
-  tower_bundle: true
-
-  # indicated whether this will be installed without internet connectivity
-  tower_disconnected: true
+  # determine EL bundle version to use
+  tower_bundle_version: el7
 
   # list of Ansible tower installer inventory files for each configuration
   # exclude tower_inventory_ha or tower_inventory_dr if only using one configuration
@@ -196,20 +196,17 @@ DR Failback
   # indicate whether the database is managed by the installer and toolkit or
   # provided as a service.  If set to true, all replication configuration is skipped
   tower_db_external: false
+
+  # indicate vault password file.  presence of this var indicates vault is used
+  #tower_vault_file: .vault-pass
   ```
 
-5. Run the `tower-setup.yml` playbook.  This playbook will take care of downloading the tower installation media for you installation (if it does not yet exist) and running the tower installer.  The version to be downloaded and/or used in the installation is found in the `tower-vars.yml` file.
+5. Run the `tower-setup.yml` playbook.  This playbook will download the tower installation media for you installation if `-e tower_download=1` is passed followed by a run of the installer.  The version to be downloaded and/or used in the installation is found in the `tower-vars.yml` file.
 
-  If you are running in a disconnected environment set the `tower_disconnected` variable to `true` and ensure the installer bundle is already downloaded.  For example for 3.3.1 ensure `tower-installer/ansible-tower-setup-bundle-3.3.1.el7.tar.gz` is in place
+    If you are running in a disconnected environment ensure the installer bundle is already downloaded.  For example for 3.6.3 ensure `tower-installer/ansible-tower-setup-bundle-3.6.3.-1.el7.tar.gz` is in place
 
   ```
   ansible-playbook tower-setup.yml
-  ```
-
-  If you want skip running Ansible Tower setup and only utilize this playbook to download the correct installer you can override the `tower_download_only` variable and run the playbook.
-
-  ```
-  ansible-playbook tower-setup.yml -e 'tower_download_only=1'
   ```
 
 6. Run the `tower-dr-standup.yml` to prepare the failover cluster and configure replication.
