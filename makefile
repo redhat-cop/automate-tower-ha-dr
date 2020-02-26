@@ -43,17 +43,25 @@ tower-3.5:
 tower-3.6:
 	@$(MAKE) tower-orchestrate-full TOWER_VERSION=3.6.3-1
 
-tower-3.6-el7:
-	@$(MAKE) tower-3.6 TOWER_EL_VERSION=el7
+set-el7:
+	TOWER_EL_VERSION=el7
+set-el8:
+	TOWER_EL_VERSION=el8
 
+tower-3.6-centos7: export VBOX=centos/7
+tower-3.6-centos7: set-el7
+	@$(MAKE) tower-3.6
+
+tower-3.6-rh7: export VBOX=generic/rhel7
+tower-3.6-rh7: set-el7
+	@$(MAKE) tower-3.6
 	
-tower-3.6-el8: export VBOX=centos/8
-tower-3.6-el8:
-	@$(MAKE) tower-3.6 TOWER_EL_VERSION=el8
+tower-3.6-centos8: export VBOX=centos/8
+tower-3.6-centos8: set-el8
+	@$(MAKE) tower-3.6
 
-tower-3.5-el7:
-	@$(MAKE) tower-3.5 TOWER_EL_VERSION=el8
+tower-3.5-el7: set-el7
+	@$(MAKE) tower-3.5
 
 tower-3.5-el8:
 	@echo "not supported"
-	

@@ -1,11 +1,9 @@
-<span style="color:blue">**NOTICE: THIS TOOLKIT DOES NOT WORK FOR TOWER VERSION 3.6**</span>
-
 Configure High Availability and/or Disaster Recovery on a Tower Cluster
 ==
 
 **Supportability**
 
-This toolkit is not officially supported by Red Hat Ansible support/engineering and is provided as is.  It is intended a starting point for a Red Hat Consulting delivery of Ansible Tower.
+This toolkit is not officially supported by Red Hat Ansible support/engineering and is provided as is.  It is intended as starting point for a Red Hat Consulting delivery of Ansible Tower.
 
 **Solution Reference Architecture**
 ![Ref Arch](readme_images/TowerClusterReferenceArch.png "Ref Arch")
