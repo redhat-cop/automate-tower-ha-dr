@@ -5,7 +5,6 @@
 tower_version: 3.4.3-1
 
 #determine bundle usage
-#tower_bundle: true
 bundle_install: true
 
 tower_bundle_version: el7
@@ -35,9 +34,6 @@ tower_db_external: false
 
 # indicate vault password file.  presence of this var indicates vault is used
 #tower_vault_file: .vault-pass
-
-#indicated whether this will be installed without internet connectivity
-tower_disconnected: true
 
 #override RAM reqts
 tower_ram_override: false
