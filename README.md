@@ -48,6 +48,8 @@ DR Failback
 
 - **only the Ansible Tower bundled installer is supported**
 
+- **For replicas, upgrades from Tower versions < 3.6 to Tower version 3.6 will result postgres 9.6 being uninstalled and postgres 10 installed.  The postgres instance and data on the replicas will not be migrated/updated**
+
 - Ansible control machine (RHEL 7/8 or CentOS 7/8) available and configured with *Ansible 2.8+*
 
 - In order to use this toolkit you *must use key authentication*.  If you are not using the root account, need to escalate and escalation requires re-authorization you must put the `ansible_become_password` in your inventory files.  If you wish to vault values in your inventory file(s) you need to set the `tower_vault_file` variables in the `tower-vars.yml`.  You also need to append `--vault-password-file` to any playbook runs listed below.
