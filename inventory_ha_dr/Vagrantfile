@@ -2,7 +2,6 @@
 # vi: set ft=ruby :
 VAGRANTFILE_API_VERSION = "2"
 
-
 box = ENV['VBOX'] || "centos/7"
 mem = ENV['VMEM'] || "8192"
 cpus = ENV['VCPU'] || 2
