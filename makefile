@@ -2,8 +2,9 @@
 
 AP := ansible-playbook
 TOWER_VERSION := 3.6.3-1
+TOWER_EL_VERSION := el7
 
-AG := "-e tower_version=$(TOWER_VERSION) -e tower_download=1"
+AG := "-e tower_version=$(TOWER_VERSION) -e tower_download=1 -e tower_bundle_version=$(TOWER_EL_VERSION)"
 AV := -vv
 #AK := '--private_key=~/.vagrant.d/insecure_private_key'
 AF := '-e tower_failback=1'
@@ -41,3 +42,15 @@ tower-3.5:
 tower-3.6:
 	@$(MAKE) tower-orchestrate-full TOWER_VERSION=3.6.3-1
 
+tower-3.6-el7:
+	@$(MAKE) tower-3.6 TOWER_EL_VERSION=el7
+
+tower-3.6-el8:
+	@$(MAKE) tower-3.6 TOWER_EL_VERSION=el8
+
+tower-3.5-el7:
+	@$(MAKE) tower-3.5 TOWER_EL_VERSION=el8
+
+tower-3.5-el8:
+	@echo "not supported"
+	
