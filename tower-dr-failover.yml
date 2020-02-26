@@ -1,5 +1,12 @@
 ---
 
+- hosts: localhost
+  become: false
+  gather_facts: no
+  tasks:
+    - set_fact:
+        failover_type: dr
+
 - import_playbook: tower-set-inventory-pm.yml
 
 - import_playbook: tower-stop-services.yml
