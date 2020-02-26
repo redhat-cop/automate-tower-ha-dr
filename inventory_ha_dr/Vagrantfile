@@ -8,11 +8,11 @@ mem = ENV['VMEM'] || "8192"
 cpus = ENV['VCPU'] || 2
 
 nodes = [
-  { :hostname => "Xtowervm1", :ip => "10.24.10.50" },
-  { :hostname => "Xtowervm2", :ip => "10.24.10.51" },
-  { :hostname => "Xtowerdb1", :ip => "10.24.10.20" },
-  { :hostname => "Xtowerdb2", :ip => "10.24.10.21" },
-  { :hostname => "Xtowerdb3", :ip => "10.24.10.22" }
+  { :hostname => "towervm1", :ip => "10.25.10.50" },
+  { :hostname => "towervm2", :ip => "10.25.10.51" },
+  { :hostname => "towerdb1", :ip => "10.25.10.20" },
+  { :hostname => "towerdb2", :ip => "10.25.10.21" },
+  { :hostname => "towerdb3", :ip => "10.25.10.22" }
 ]
 
 Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
