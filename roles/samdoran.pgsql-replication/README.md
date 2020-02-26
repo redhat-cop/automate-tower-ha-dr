@@ -1,3 +1,8 @@
+NOTE
+=========
+
+THIS README is included from the original upstream role.  Significant changes have been made and this README is only provided for reference
+
 
 PostgreSQL Streaming Replication
 =========

@@ -7,6 +7,8 @@
 
     - name: Clear out data directory
       shell: rm -rf {{ pgsqlrep_data_path }}/*
+      args:
+        warn: false
 
     - name: Create base backup
       command: "{{ pgsqlrep_bash }} pg_basebackup -X stream -D {{ pgsqlrep_data_path }} -h {{ pgsqlrep_master_address }} -U {{ pgsqlrep_user }}"

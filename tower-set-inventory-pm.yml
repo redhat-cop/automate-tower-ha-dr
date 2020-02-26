@@ -5,7 +5,9 @@
   vars_files: tower-vars.yml
   vars:
     _tower_failback: "{{ tower_failback | default(false) }}"
-    _tower_inventory_file: "{{ tower_inventory_pm if not _tower_failback else tower_inventory_dr  }}"
+    _tower_failover_type: "{{ tower_failover_type | default('dr') }}"
+    _tower_failover_inventory: "{{ lookup('vars', 'tower_inventory_' + _tower_failover_type) }}"
+    _tower_inventory_file: "{{ tower_inventory_pm if not _tower_failback else _tower_failover_inventory  }}"
   tasks:
 
   - name: "set inventory to {{ _tower_inventory_file }}"

@@ -1,27 +1,11 @@
 
-- name: include vars normally in group vars all in the installer
-  include_vars:
-    file: "{{ tower_installer_current }}/group_vars/all"
+
 
 - name: import postgres role vars
   import_role:
     name: "{{tower_installer_current}}/roles/postgres"
   vars:
     postgres_exec_vars_only: true
-
-- name: postgres96 removal block for Tower 3.6 and later
-  block:
-  - name: uninstall postgres96
-    yum:
-      name: postgresql96*
-      state: absent
-
-  - name: remove postgres data files
-    file:
-      state: absent
-      path: /var/lib/pgsql/9.6
-
-  when: tower_package_version is version('3.6', '>=')
 
 - name: Find recovery.conf
   find:
@@ -51,12 +35,12 @@
   import_role:
     name: "{{tower_installer_current}}/roles/postgres"
   vars:
-    postgres_allowed_ipv4: "0.0.0.0/0"
-    postgres_allowed_ipv6: "::/0"
+    postgres_allowed_ipv4: "{{ tower_postgres_allowed.ipv4 }}"
+    postgres_allowed_ipv6: "{{ tower_postgres_allowed.ipv6 }}"
     postgres_username: "{{ pg_username }}"
     postgres_password: "{{ pg_password }}"
     postgres_database: "{{ pg_database }}"
-    max_postgres_connections: 1024
+    max_postgres_connections: "{{ tower_postres_max_conn }}"
     postgres_shared_memory_size: "{{ (ansible_memtotal_mb*0.3)|int }}"
     postgres_work_mem: "{{ (ansible_memtotal_mb*0.03)|int }}"
     postgres_maintenance_work_mem: "{{ (ansible_memtotal_mb*0.04)|int }}"

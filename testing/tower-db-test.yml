@@ -1,0 +1,9 @@
+---
+
+- name: Configure PSQL master server
+  hosts: database*
+  become: true
+  become_user: postgres
+  vars_files: tower-vars.yml
+  roles:
+  - role: samdoran.pgsql-replication
