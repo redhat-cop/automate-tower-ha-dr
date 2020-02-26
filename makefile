@@ -2,9 +2,8 @@
 
 AP := ansible-playbook
 TOWER_VERSION := 3.6.3-1
-TOWER_EL_VERSION := el7
 
-AG := "-e tower_version=$(TOWER_VERSION) -e tower_download=1 -e tower_bundle_version=$(TOWER_EL_VERSION)"
+AG := "-e tower_version=$(TOWER_VERSION) -e tower_download=1"
 AV := -vv
 #AK := '--private_key=~/.vagrant.d/insecure_private_key'
 AF := '-e tower_failback=1'

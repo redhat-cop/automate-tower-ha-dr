@@ -7,6 +7,10 @@
   vars:
     postgres_exec_vars_only: true
 
+- name: name remove postgres 9.6 for Tower versions > 3.6
+  include_tasks:
+    file: remove-pg9.yml
+
 - name: Find recovery.conf
   find:
     paths: "{{ pg_conf_dir }}"
