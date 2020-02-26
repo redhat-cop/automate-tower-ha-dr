@@ -77,7 +77,7 @@
       ignore_errors: yes
 
     - name: get master db  configured on tower nodes
-      command: python -c "import postgres; print postgres.DATABASES['default']['HOST']"
+      command: python2 -c "import postgres; print postgres.DATABASES['default']['HOST']"
       args:
         chdir: /etc/tower/conf.d
       register: master_db
