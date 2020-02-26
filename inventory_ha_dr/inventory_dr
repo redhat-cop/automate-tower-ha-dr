@@ -1,11 +1,11 @@
 [tower]
-towervm2 ansible_host="10.25.10.51"
+towervm2 ansible_host="10.24.10.51"
 
 [database]
-towerdb3 ansible_host="10.25.10.22"
+towerdb3 ansible_host="10.24.10.22"
 
 [database_replica]
-towerdb1 ansible_host="10.25.10.20" pgsqlrep_type=remote
+towerdb1 ansible_host="10.24.10.20" pgsqlrep_type=remote
 
 [database_all:children]
 database
@@ -21,7 +21,7 @@ ansible_ssh_common_args='-o StrictHostKeyChecking=no'
 #ansible_become=true
 admin_password='password1'
 
-pg_host='10.25.10.22'
+pg_host='10.24.10.22'
 pg_port='5432'
 
 pg_database='awx'

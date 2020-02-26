@@ -4,10 +4,10 @@
   file:
     state: directory
     path: /etc/tower
-    mode: 0640
+    mode: 0755
 
 - name: deploy secret to tower
   copy:
     content: "{{ tower_secret_key_value }}"
     dest: "/etc/tower/SECRET_KEY"
-    mode: 0640
+    mode: 0755

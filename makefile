@@ -33,8 +33,10 @@ tower-ha-failback:
 	@$(MAKE) tower-ha-failover EF=$(AF)
 
 tower-orchestrate-full: tower-infra-up tower-setup tower-orchestrate-dr
+	@echo "FINISHED TOWER INFRA + ORCHESTRATION"
 
 tower-orchestrate-dr: tower-dr-standup tower-dr-failover tower-dr-failback tower-ha-failover tower-ha-failback
+	@echo "FINISHED TOWER DR ORCHESTRATION"
 
 tower-3.5:
 	@$(MAKE) tower-orchestrate-full TOWER_VERSION=3.5.4-1
@@ -45,6 +47,8 @@ tower-3.6:
 tower-3.6-el7:
 	@$(MAKE) tower-3.6 TOWER_EL_VERSION=el7
 
+	
+tower-3.6-el8: export VBOX=centos/8
 tower-3.6-el8:
 	@$(MAKE) tower-3.6 TOWER_EL_VERSION=el8
 
