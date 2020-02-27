@@ -16,6 +16,10 @@ AI := inventory_ha_dr
 tower-infra-destroy:
 	cd $(AI); vagrant destroy -f
 
+tower-infra-up-rh7: export VBOX=generic/rhel7
+tower-infra-up-rh7: tower-infra-up
+	@echo "END RH7 PROVISION"
+
 tower-infra-up:
 	cd $(AI); vagrant up
 
