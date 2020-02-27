@@ -27,7 +27,7 @@
     - fail:
         msg: "pgsqlrep_type must be local or remote"
       when: item not in pgsqlrep_type_list
-      with_items: "{{ _pgsqlrep_types }}"
+      loop: "{{ _pgsqlrep_types }}"
 
   delegate_to: localhost
   run_once: true

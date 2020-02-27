@@ -25,8 +25,6 @@
 
   - name: refresh_inventory
     meta: refresh_inventory
-
-  - meta: reset_connection
-
+  
   delegate_to: localhost
   run_once: true

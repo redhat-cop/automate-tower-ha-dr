@@ -24,7 +24,7 @@
   file:
     path: "{{ item.path }}"
     state: absent
-  with_items: "{{ recovery_conf_path.files }}"
+  loop: "{{ recovery_conf_path.files }}"
 
 - name: Setup RedHat/CentOS repos for pg installation
   import_role:
@@ -73,5 +73,5 @@
     state: enabled
     immediate: yes
     zone: "{{ tower_firewalld_zone }}"
-  with_items: "{{ database_firewall_ports }}"
+  loop: "{{ database_firewall_ports }}"
   when: not postgres_firewall_running.changed

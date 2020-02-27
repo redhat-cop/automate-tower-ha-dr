@@ -33,7 +33,7 @@
 
 - name: Gather ssh host keys
   command: ssh-keyscan {{ hostvars[item].ansible_all_ipv4_addresses[-1] }}
-  with_items: "{{ groups.all }}"
+  loop: "{{ groups.all }}"
   become: no
   changed_when: no
   register: host_keys
@@ -42,7 +42,7 @@
   known_hosts:
     name: "{{ item.cmd[-1] }}"
     key: "{{ item.stdout }}"
-  with_items: "{{ host_keys.results }}"
+  loop: "{{ host_keys.results }}"
   tags:
     - tower
 
