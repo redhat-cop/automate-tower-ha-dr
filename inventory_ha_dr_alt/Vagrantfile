@@ -1,0 +1,41 @@
+# -*- mode: ruby -*-
+# vi: set ft=ruby :
+VAGRANTFILE_API_VERSION = "2"
+
+box = ENV['VBOX'] || "centos/7"
+mem = ENV['VMEM'] || "8192"
+cpus = ENV['VCPU'] || 2
+
+nodes = [
+  { :hostname => "towervm1alt", :ip => "10.21.10.50" },
+  { :hostname => "towervm2alt", :ip => "10.21.10.51" },
+  { :hostname => "towerdb1alt", :ip => "10.21.10.20" },
+  { :hostname => "towerdb2alt", :ip => "10.21.10.21" },
+  { :hostname => "towerdb3alt", :ip => "10.21.10.22" }
+]
+
+Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
+
+  nodes.each do |node|
+    config.vm.define node[:hostname] do |nodeconfig|
+
+      nodeconfig.vm.box = box
+      nodeconfig.ssh.insert_key = false
+      nodeconfig.vm.hostname = node[:hostname]
+
+      if node[:ip]
+        nodeconfig.vm.network :private_network, ip: node[:ip]
+        nodeconfig.vm.network :forwarded_port, guest: 443, host: 4443, host_ip: "192.168.1.120"
+      end
+
+      nodeconfig.vm.provider :libvirt do |libvirt|
+        libvirt.driver = "kvm"
+        libvirt.memory = mem
+        libvirt.cpus = cpus
+        libvirt.nested = false
+      end  #end libvirt provider
+    end # end node config
+
+  end #end node loop
+
+end #end configure

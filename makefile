@@ -1,71 +1,98 @@
 #!/usr/bin/make -f
 
-AP := ansible-playbook
-TOWER_VERSION := 3.6.3-1
+ANSIBLE_PLAYBOOK := ansible-playbook
 
-AG := "-e tower_version=$(TOWER_VERSION) -e tower_download=1"
-AV := -vv
-#AK := '--private_key=~/.vagrant.d/insecure_private_key'
-AF := '-e tower_failback=1'
+ANSIBLE_EXTRA_VARS := "-e tower_version=$(TOWER_VERSION) -e tower_download=1"
+ANSIBLE_VERBOSITY := -vv
+#ANSIBLE_KEY := '--private_key=~/.vagrant.d/insecure_private_key'
+TOWER_FAILBACK_VARS := '-e tower_failback=1'
 
-AI := inventory_ha_dr
+TOWER_VERSION ?= 3.6.3-1
+TOWER_INVENTORY_DIR ?= inventory_ha_dr
+TOWER_EL_VERSION ?= el7
+VBOX ?= centos/7
 
 .PHONY: roles
 
 #####INFRA
 tower-infra-destroy:
-	cd $(AI); vagrant destroy -f
+	cd $(TOWER_INVENTORY_DIR); vagrant destroy -f
 
 tower-infra-up-rh7: export VBOX=generic/rhel7
 tower-infra-up-rh7: tower-infra-up
 	@echo "END RH7 PROVISION"
 
 tower-infra-up:
-	cd $(AI); vagrant up
+	cd $(TOWER_INVENTORY_DIR); VBOX=$(VBOX) vagrant up
 
 ##ANSIBLE
 .PHONY: all test clean $(wildcard *.yml)
 
 %:
-	$(AP) $*.yml $(AG) $(AV) $(EF)
+	$(ANSIBLE_PLAYBOOK) $*.yml $(ANSIBLE_EXTRA_VARS) $(ANSIBLE_VERBOSITY) $(EF)
 
 tower-dr-failback:
-	@$(MAKE) tower-dr-failover EF=$(AF)
+	@$(MAKE) tower-dr-failover EF=$(TOWER_FAILBACK_VARS)
 
 tower-ha-failback:
-	@$(MAKE) tower-ha-failover EF=$(AF)
+	@$(MAKE) tower-ha-failover EF=$(TOWER_FAILBACK_VARS)
 
 tower-orchestrate-full: tower-infra-up tower-setup tower-orchestrate-dr
 	@echo "FINISHED TOWER INFRA + ORCHESTRATION"
 
-tower-orchestrate-dr: tower-dr-standup tower-dr-failover tower-dr-failback tower-ha-failover tower-ha-failback
+tower-orchestrate-dr: tower-dr-standup tower-dr-failover tower-dr-failback
 	@echo "FINISHED TOWER DR ORCHESTRATION"
 
-tower-3.5:
-	@$(MAKE) tower-orchestrate-full TOWER_VERSION=3.5.4-1
+tower-orchestrate-ha: tower-ha-standup tower-ha-failover tower-ha-failback
+	@echo "FINISHED TOWER DA ORCHESTRATION"
 
-tower-3.6:
-	@$(MAKE) tower-orchestrate-full TOWER_VERSION=3.6.3-1
+###TOWER 3.6
+tower-3.6-centos8: export VBOX=centos/8
+tower-3.6-centos8: export TOWER_EL_VERSION=el8
+tower-3.6-centos8: export TOWER_VERSION=3.6.3-1
+tower-3.6-centos8:
+	@$(MAKE) tower-orchestrate-full
 
-set-el7:
-	TOWER_EL_VERSION=el7
-set-el8:
-	TOWER_EL_VERSION=el8
+tower-3.6-rh8: export VBOX=generic/rhel8
+tower-3.6-rh8: export TOWER_EL_VERSION=el8
+tower-3.6-rh8: export TOWER_VERSION=3.6.3-1
+tower-3.6-rh8:
+	@$(MAKE) tower-orchestrate-full
 
 tower-3.6-centos7: export VBOX=centos/7
-tower-3.6-centos7: set-el7
-	@$(MAKE) tower-3.6
+tower-3.6-centos7: export TOWER_EL_VERSION=el7
+tower-3.6-centos7: export TOWER_VERSION=3.6.3-1
+tower-3.6-centos7:
+	@$(MAKE) tower-orchestrate-full
 
 tower-3.6-rh7: export VBOX=generic/rhel7
-tower-3.6-rh7: set-el7
-	@$(MAKE) tower-3.6
-	
-tower-3.6-centos8: export VBOX=centos/8
-tower-3.6-centos8: set-el8
-	@$(MAKE) tower-3.6
+tower-3.6-rh7: export TOWER_EL_VERSION=el7
+tower-3.6-rh7: export TOWER_VERSION=3.6.3-1
+tower-3.6-rh7:
+	@$(MAKE) tower-orchestrate-full
 
-tower-3.5-el7: set-el7
-	@$(MAKE) tower-3.5
+###TOWER 3.5
+tower-3.5-centos8: export VBOX=centos/8
+tower-3.5-centos8: export TOWER_EL_VERSION=el8
+tower-3.5-centos8: export TOWER_VERSION=3.5.4-1
+tower-3.5-centos8:
+	@$(MAKE) tower-orchestrate-full
 
-tower-3.5-el8:
-	@echo "not supported"
+tower-3.5-rh8: export VBOX=generic/rhel8
+tower-3.5-rh8: export TOWER_EL_VERSION=el8
+tower-3.5-rh8: export TOWER_VERSION=3.5.4-1
+tower-3.5-rh8:
+	@$(MAKE) tower-orchestrate-full
+
+tower-3.5-centos7: export VBOX=centos/7
+tower-3.5-centos7: export TOWER_EL_VERSION=el7
+tower-3.5-centos7: export TOWER_VERSION=3.5.4-1
+tower-3.5-centos7:
+	@$(MAKE) tower-orchestrate-full
+
+tower-3.5-rh7: export VBOX=generic/rhel7
+tower-3.5-rh7: export TOWER_EL_VERSION=el7
+tower-3.5-rh7: export TOWER_VERSION=3.5.4-1
+tower-3.5-rh7:
+	@$(MAKE) tower-orchestrate-full
+
