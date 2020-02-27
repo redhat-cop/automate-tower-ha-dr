@@ -2,7 +2,7 @@
 
 - name: determine if vault params in use
   set_fact:
-    tower_vault_params: "--vault-password-file={{ tower_vaul_file }}"
+    tower_vault_params: "--vault-password-file={{ tower_vault_file }}"
   when: tower_vault_file is defined
 
 # NOTE must change directory to pickup roles and host/group vars

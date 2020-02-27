@@ -1,6 +1,17 @@
 ---
 
 tower_api_host: "{{ groups['tower'][0] }}"
-tower_api_password: "{{ hostvars[tower_host]['admin_password'] }}"
+tower_api_location: "{{ hostvars[tower_api_host]['ansible_host'] }}"
 tower_api_user: admin
+tower_api_password: "{{ hostvars[tower_api_host]['admin_password'] }}"
 tower_api_protocol: "https"
+tower_api_base: "{{tower_api_protocol }}://{{ tower_api_location }}/api/v2"
+tower_api_method: GET
+tower_api_status_codes: [ 200, 201 ]
+tower_api_basic_auth: true
+tower_api_validate_certs: false
+
+tower_api_return_var: tower_api_results
+
+# defined by caller
+tower_api_endpiont: ""
