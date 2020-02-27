@@ -1,10 +1,10 @@
 ---
 
-# NOTE tower vars
+# NOTE assuming bundled instalaler
 
-tower_version: 3.4.3-1
+tower_version: 3.6.3-1
 
-#determine bundle usage
+# required for roles included from the installer
 bundle_install: true
 
 tower_bundle_version: el7
@@ -14,8 +14,6 @@ tower_installer_dir: tower-installer
 
 # expected media file based on tower version. Assumes bundle with el extension (e.g .el7)
 tower_artifact: "ansible-tower-setup-bundle-{{ tower_version }}.{{ tower_bundle_version }}.tar.gz"
-
-tower_download_url: "https://releases.ansible.com/ansible-tower/setup-bundle/{{ tower_artifact }}"
 
 #get the current installer directory
 tower_installer_basedir_cmd: "tar --exclude='*/*' -tf {{ tower_installer_dir }}/{{ tower_artifact }}"
