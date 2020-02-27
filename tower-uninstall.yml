@@ -7,7 +7,7 @@
     pkgs_to_remove:
     - ansible-tower*
     - rabbitmq-server*
-    - postgresql*
+    - '*postgresql*'
     dep_pkgs_to_remove:
     - ansible
     - python2-jmespath

@@ -1,5 +1,7 @@
 
-
+- name: include vars normally in group vars all in the installer
+  include_vars:
+    file: "{{ tower_installer_current }}/group_vars/all"
 
 - name: import postgres role vars
   import_role:

@@ -2,6 +2,7 @@
 
 - hosts: localhost
   connection: local
+  become: false
   vars_files: tower-vars.yml
   vars:
     tower_download: false
@@ -33,7 +34,7 @@
       chdir: "{{ tower_installer_dir }}"
       creates: "{{ playbook_dir }}/{{ tower_installer_current }}"
 
-    # issues with running on macos with unarchive module
+    # issues with running unarchive module with tar vs gtar
     # unarchive:
     #   src: "{{ tower_installer_dir }}/{{ tower_artifact }}"
     #   dest: "{{ tower_installer_dir }}/"
