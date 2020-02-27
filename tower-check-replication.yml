@@ -1,6 +1,7 @@
 ---
 
-- hosts: database_replica
+- name: Check replication status
+  hosts: database_replica:database
   gather_facts: yes
   become: true
   become_user: postgres
@@ -11,83 +12,65 @@
   - name: high level block to determine if db replication is managed by toolkit
     block:
 
-    # get tower postgres role vars
-    - name: import postgres role vars
-      import_role:
-        name: "{{tower_installer_current}}/roles/postgres"
-      vars:
-        postgres_exec_vars_only: true
-
-    - set_fact:
-        pg_bash: ""
-      when: pg_bash is not defined
-
     - name: check replication status and latency
-      command: '{{ pg_bash }} psql -U postgres -t -c "select extract(epoch from now() - pg_last_xact_replay_timestamp());"'
+      postgresql_query:
+        db: "postgres"
+        query: "select extract(epoch from now() - pg_last_xact_replay_timestamp());"
       register: replication_latency
       changed_when: false
+      when: "'database_replica' in group_names"
 
-    - name: extract datetime
-      debug:
-        msg: "Replication latency is {{ replication_latency.stdout | float }}"
-      failed_when: replication_latency.stdout | float > replication_time_threshold
+    - name: Ensure replication latency within threshold
+      assert:
+        that:
+        - replication_latency.query_result[0].date_part | float < replication_time_threshold
+        fail_msg: "Replication latency {{ replication_latency.query_result[0].date_part | float }} is above {{ replication_time_threshold }}"
+        success_msg: "Replication latency is {{ replication_latency.query_result[0].date_part | float }}"
+      when: "'database_replica' in group_names"
 
-    - name: ensure replica is in recovery mode
-      command:  '{{ pg_bash }} psql -U postgres -t -c "select pg_is_in_recovery();"'
+    - name: Check recovery mode
+      postgresql_query:
+        db: "postgres"
+        query: "select pg_is_in_recovery();"
       register: recovery_mode
       changed_when: false
 
-    - name: check recovery mode is set to true on replica(s)
-      debug:
-        msg: "Recovery mode is {{ (recovery_mode.stdout.strip() == 't') | ternary('TRUE', 'FALSE') }}"
-      failed_when: recovery_mode.stdout.strip() != 't'
+    - name: Ensure recovery mode is set to true on replica(s)
+      assert:
+        that:
+        - recovery_mode.query_result[0].pg_is_in_recovery
+        fail_msg: "Recovery mode is {{ recovery_mode.query_result[0].pg_is_in_recovery }}"
+      when: "'database_replica' in group_names"
 
-    when: not tower_db_external
-
-- hosts: database
-  gather_facts: yes
-  become: true
-  become_user: postgres
-  vars_files: tower-vars.yml
-  tasks:
-
-  - name: high level block to determine if db replication is managed by toolkit
-    block:
-
-    # get tower postgres role vars
-    - name: import postgres role vars
-      import_role:
-        name: "{{tower_installer_current}}/roles/postgres"
-      vars:
-        postgres_exec_vars_only: true
-
-    - set_fact:
-        pg_bash: ""
-      when: pg_bash is not defined
-
-    - name: ensure master is not in recovery mode
-      command: '{{ pg_bash }} psql -U postgres -t -c "select pg_is_in_recovery();"'
-      register: recovery_mode
-      changed_when: false
-
-    - name: check recovery mode is set to false on primary
-      debug:
-        msg: "Recovery mode is {{ (recovery_mode.stdout.strip() == 't') | ternary('TRUE', 'FALSE') }}"
-      failed_when: recovery_mode.stdout.strip() != 'f'
-      ignore_errors: yes
+    - name: Ensure recovery mode is set to false on primary
+      assert:
+        that:
+        - not recovery_mode.query_result[0].pg_is_in_recovery
+        fail_msg: "Recovery mode is {{ recovery_mode.query_result[0].pg_is_in_recovery }}"
+      when: "'database' in group_names"
 
     - name: get master db  configured on tower nodes
-      command: python2 -c "import postgres; print postgres.DATABASES['default']['HOST']"
-      args:
-        chdir: /etc/tower/conf.d
-      register: master_db
+      shell: awx-manage print_settings | grep -oP "^DATABASES *= \K.*"
+      register: db_info_cmd
       delegate_to: "{{ groups['tower'][0] }}"
       become_user: root
       changed_when: false
+      run_once: true
+      no_log: true
 
-    - name: check configured db for tower nodes
-      debug:
-        msg: "Configured db is {{ master_db.stdout }}"
-      failed_when: pg_host != master_db.stdout
+    - set_fact:
+        db_host: "{{ _db_info.default.HOST }}"
+      vars:
+        _db_info: "{{ db_info_cmd.stdout | to_json | from_json }}"
+      run_once: true
+      no_log: true
+
+    - name: Ensure proper configured db for tower nodes
+      assert:
+        that:
+        - pg_host == db_host
+        success_msg: "Configured db is {{ db_host }}"
+        fail_msg: "Configured db is {{ db_host }} should be {{ pg_host }}"
+      run_once: true
 
     when: not tower_db_external
