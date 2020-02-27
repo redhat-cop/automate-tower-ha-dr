@@ -1,3 +1,8 @@
+NOTE
+=========
+
+THIS README is included from the original upstream role.  Significant changes have been made and this README is only provided for reference
+
 
 PostgreSQL Streaming Replication
 =========
@@ -93,7 +98,7 @@ ansible-playbook -b -i inventory samdoran.pgsql-replication.yml
       file:
         path: "{{ item.path }}"
         state: absent
-      with_items: "{{ recovery_conf_path.files }}"
+      loop: "{{ recovery_conf_path.files }}"
 
     - name: Add replica to database group
       add_host:

@@ -7,7 +7,7 @@
     pkgs_to_remove:
     - ansible-tower*
     - rabbitmq-server*
-    - postgresql*
+    - '*postgresql*'
     dep_pkgs_to_remove:
     - ansible
     - python2-jmespath
@@ -82,7 +82,7 @@
     file:
       path: "{{ item }}"
       state: absent
-    with_items:
+    loop:
       - "{{ files_to_remove }}"
       - "{{ awx_file_list }}"
 
@@ -91,12 +91,12 @@
     file:
       path: "{{ item }}"
       state: absent
-    with_items: "{{ parent_dirs_to_remove }}"
+    loop: "{{ parent_dirs_to_remove }}"
     ignore_errors: yes
 
   - name: clean yum cache
     command: "{{ item }}"
-    with_items:
+    loop:
     - "yum clean all"
     - "rm -rf /var/cache/yum"
 

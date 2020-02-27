@@ -1,88 +1,52 @@
 ---
 
 - name: set facts for pgsql-replication role and preflight check
-  hosts: database*
-  vars:
-    pgsqlrep_type_list: [ 'local', 'remote' ]
+  hosts: database*  
   vars_files: tower-vars.yml
   tasks:
-  - name: HIGH LEVEL BLOCK TO DETERMINE IF DB FAILOVER IS MANAGED BY TOOLKIT
+  - name: determine if db failover is managed by toolkit
+    when: not tower_db_external
     block:
 
-    - name: PostgreSQL streaming replication pre-preflight check
-      block:
-        - name: ensure there is only one database in main database group
-          fail:
-            msg: "Multiple hosts or none in primary database group. hosts: {{ groups['database'] }}"
-          when: groups['database'] | length != 1
+    # OUTPUT tower_replication_master_address, tower_replication_replica_address_list
+    - name: perform tower replication pre-flight checks
+      include_role:
+        name: tower_replication_preflight  
+    
+    # end block
 
-        - name: ensure there is at least one host in replication group
-          fail:
-            msg: "No hosts in database_replica group"
-          when: groups['database_replica'] | length == 0
-
-        - name: ensure there are only maximum two hosts in replication group
-          fail:
-            msg: "Too many hosts in replica group. Only an HA and DR instance are allowed.  hosts: {{ groups['database_replica']  }}"
-          when: groups['database_replica'] | length > 2
-
-        - set_fact:
-            _pgsqlrep_types: "{{ groups['database_replica'] | map('extract', hostvars, 'pgsqlrep_type') | list}}"
-
-        - fail:
-            msg: "pgsqlrep_type is undefined for one or more hosts"
-          when: "'Undefined' in _pgsqlrep_types"
-
-        - fail:
-            msg: "pgsqlrep_type must be local or remote"
-          when: item not in pgsqlrep_type_list
-          with_items: "{{ _pgsqlrep_types }}"
-
-      delegate_to: localhost
-      run_once: true
-
-    - name: set facts for master and replica. Consider using facts?
-      set_fact:
-        _pgsqlrep_master_address: "{{ groups['database'][0] | infer_address(hostvars) }}"
-        _pgsqlrep_replica_address: "{{ groups['database_replica'] | map('infer_address', hostvars) | list }}"
-
-    - name: PostgreSQL streaming replication pre-preflight check. Contd
-      block:
-        - name: ensure pg_host has value of master database
-          fail:
-            msg: "pg_host does not match master"
-          when: pg_host != _pgsqlrep_master_address
-      delegate_to: localhost
-      run_once: true
-    when: not tower_db_external
-
-- name: Configure PostgreSQL streaming replication
+- name: Configure PostgreSQL on replicas
   hosts: database_replica
   become: true
   vars_files: tower-vars.yml
   tasks:
-  - name: HIGH LEVEL BLOCK TO DETERMINE IF DB FAILOVER IS MANAGED BY TOOLKIT
+  - name: determine if db failover is managed by toolkit
+    when: not tower_db_external
     block:
-    - name: Set bundle variable for postgres install
-      set_fact:
-        bundle_install: true
-      when: tower_bundle | bool
 
-    - include_role:
-        name: postgres_base
+    - name: Install postgres database the Tower way
+      include_role:
+        name: tower_postgres_base
       when: not (pgsqlrep_install_skip | default(False) | bool)
 
-    when: not tower_db_external
+    #end block
 
 - name: Configure PSQL master server
   hosts: database[0]
   become: true
   vars_files: tower-vars.yml
   roles:
+
+  - role: "{{tower_installer_current}}/roles/postgres"
+    postgres_exec_vars_only: true
+
   - role: samdoran.pgsql-replication
     pgsqlrep_role: master
-    pgsqlrep_master_address: "{{ _pgsqlrep_master_address }}"
-    pgsqlrep_replica_address: "{{ _pgsqlrep_replica_address }}"
+    pgsqlrep_data_path: "{{ pg_conf_dir }}"
+    pgsqlrep_service: "{{ postgres_init_name }}"
+    pgsqlrep_master_address: "{{ tower_replication_master_address }}"
+    pgsqlrep_replica_address: "{{ tower_replication_replica_address_list }}"
+    pgsqlrep_bash: "{{ pg_bash | default('') }}"
     when: not tower_db_external
 
 - name: Configure PSQL replica
@@ -90,11 +54,15 @@
   become: true
   vars_files: tower-vars.yml
   roles:
+
+  - role: "{{tower_installer_current}}/roles/postgres"
+    postgres_exec_vars_only: true
+
   - role: samdoran.pgsql-replication
     pgsqlrep_role: replica
-    pgsqlrep_master_address: "{{ _pgsqlrep_master_address }}"
-    pgsqlrep_replica_address: "{{ _pgsqlrep_replica_address }}"
+    pgsqlrep_data_path: "{{ pg_conf_dir }}"
+    pgsqlrep_service: "{{ postgres_init_name }}"
+    pgsqlrep_master_address: "{{ tower_replication_master_address }}"
+    pgsqlrep_replica_address: "{{ tower_replication_replica_address_list }}"
+    pgsqlrep_bash: "{{ pg_bash | default('') }}"
     when: not tower_db_external
-
-
-...

@@ -1,30 +1,17 @@
 ---
 
-- name: set fact for for failback flag
-  hosts: all:localhost
+- hosts: localhost
+  become: false
   gather_facts: no
-  pre_tasks:
-  - name: set a local fact as boolean
-    set_fact:
-      _tower_failback: "{{ tower_failback | default(False) | bool }}"
+  tasks:
+    - set_fact:
+        tower_failover_type: ha
 
-- name: setup inventory to shutdown services
-  hosts: localhost
-  gather_facts: no
-  vars_files: tower-vars.yml
-  roles:
-  - role: tower_inventory
-    tower_inventory_file: "{{ tower_inventory_ha if _tower_failback else tower_inventory_pm  }}"
+- import_playbook: tower-set-inventory-pm.yml
 
 - import_playbook: tower-stop-services.yml
 
-- name: setup inventory for backup site or primary site in failback
-  hosts: localhost
-  vars_files: tower-vars.yml
-  gather_facts: no
-  roles:
-  - role: tower_inventory
-    tower_inventory_file: "{{ tower_inventory_pm if _tower_failback else tower_inventory_ha  }}"
+- import_playbook: tower-set-inventory-ha.yml
 
 # when there is no replica, no action will be taken
 - import_playbook: tower-pgsql-promote.yml
@@ -36,13 +23,13 @@
     _tower_eng_failover: "{{ tower_eng_failover | default(False) | bool }}"
   tasks:
 
-  - block:
+  - name: Normal failover mechansim. Installer rerun
+    block:
     - include_role:
         name: tower_install
       vars:
         tower_install_inventory: "{{ ansible_inventory_sources[0] }}"
         tower_install_directory: "{{ tower_installer_current }}"
-        tower_install_skip_run: "{{ tower_install_skip }}"
         tower_install_ram_override: "{{ tower_ram_override }}"
     delegate_to: localhost
     run_once: true

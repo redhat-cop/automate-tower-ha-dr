@@ -1,0 +1,19 @@
+---
+
+- name: include vars normally in group vars all in the installer
+  include_vars:
+    file: "{{ tower_installer_current }}/group_vars/all"
+
+- name: postgres96 removal block for Tower 3.6 and later
+  block:
+  - name: uninstall postgres96
+    yum:
+      name: postgresql96*
+      state: absent
+
+  - name: remove postgres data files
+    file:
+      state: absent
+      path: /var/lib/pgsql/9.6
+
+  when: tower_package_version is version('3.6', '>=')

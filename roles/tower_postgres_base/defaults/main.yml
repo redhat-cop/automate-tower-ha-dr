@@ -1,0 +1,8 @@
+---
+
+
+tower_postgres_allowed:
+  ipv4:  "0.0.0.0/0"
+  ipv6: "::/0"
+
+tower_postres_max_conn: 1024

@@ -1,0 +1,77 @@
+
+- name: include vars normally in group vars all in the installer
+  include_vars:
+    file: "{{ tower_installer_current }}/group_vars/all"
+
+- name: import postgres role vars
+  import_role:
+    name: "{{tower_installer_current}}/roles/postgres"
+  vars:
+    postgres_exec_vars_only: true
+
+- name: name remove postgres 9.6 for Tower versions > 3.6
+  include_tasks:
+    file: remove-pg9.yml
+
+- name: Find recovery.conf
+  find:
+    paths: "{{ pg_conf_dir }}"
+    recurse: yes
+    patterns: recovery.conf
+  register: recovery_conf_path
+
+- name: Remove recovery.conf
+  file:
+    path: "{{ item.path }}"
+    state: absent
+  loop: "{{ recovery_conf_path.files }}"
+
+- name: Setup RedHat/CentOS repos for pg installation
+  import_role:
+    name: "{{tower_installer_current}}/roles/repos_el"
+
+- name: Install packages for RedHat/Centos skipping Tower
+  import_role:
+    name: "{{tower_installer_current}}/roles/packages_el"
+  vars:
+    packages_el_install_tower: false
+    packages_el_install_postgres: true
+
+- name: Install postgres and setup replication.
+  import_role:
+    name: "{{tower_installer_current}}/roles/postgres"
+  vars:
+    postgres_allowed_ipv4: "{{ tower_postgres_allowed.ipv4 }}"
+    postgres_allowed_ipv6: "{{ tower_postgres_allowed.ipv6 }}"
+    postgres_username: "{{ pg_username }}"
+    postgres_password: "{{ pg_password }}"
+    postgres_database: "{{ pg_database }}"
+    max_postgres_connections: "{{ tower_postres_max_conn }}"
+    postgres_shared_memory_size: "{{ (ansible_memtotal_mb*0.3)|int }}"
+    postgres_work_mem: "{{ (ansible_memtotal_mb*0.03)|int }}"
+    postgres_maintenance_work_mem: "{{ (ansible_memtotal_mb*0.04)|int }}"
+  tags:
+    - postgresql_database
+
+- name: get Tower install firewall information
+  include_role:
+    name: "{{tower_installer_current}}/roles/firewall"
+    tasks_from: none.yml
+    public: yes
+
+- name: determine if firewalld is running
+  service:
+    name: firewalld
+    state: started
+  check_mode: yes
+  register: postgres_firewall_running
+
+- name: Enable Standalone Database firewall ports
+  firewalld:
+    port: '{{item}}/tcp'
+    permanent: true
+    state: enabled
+    immediate: yes
+    zone: "{{ tower_firewalld_zone }}"
+  loop: "{{ database_firewall_ports }}"
+  when: not postgres_firewall_running.changed

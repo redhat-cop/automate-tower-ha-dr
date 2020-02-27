@@ -1,27 +1,25 @@
 ---
 
-tower_version: 3.4.3-1
+# NOTE assuming bundled instalaler
 
-#determine bundle usage
-tower_bundle: true
+tower_version: 3.6.3-1
+
+# required for roles included from the installer
+bundle_install: true
+
+tower_bundle_version: el7
 
 #default download/extract location for installer
 tower_installer_dir: tower-installer
 
-#indicated whether this will be installed without internet connectivity
-tower_disconnected: true
-
-#override RAM reqts
-tower_ram_override: false
-
-# installer download and extract details
-tower_download_url_base:  "https://releases.ansible.com/ansible-tower/setup{{ '-bundle' if tower_bundle else '' }}"
-tower_artifact_base: "ansible-tower-setup{{ '-bundle' if tower_bundle else '' }}"
-tower_artifact: "{{ tower_artifact_base }}-{{ tower_version }}{{ '.el7' if tower_bundle else '' }}.tar.gz"
-tower_download_url: "{{ tower_download_url_base }}/{{ tower_artifact }}"
+# expected media file based on tower version. Assumes bundle with el extension (e.g .el7)
+tower_artifact: "ansible-tower-setup-bundle-{{ tower_version }}.{{ tower_bundle_version }}.tar.gz"
 
 #get the current installer directory
-tower_installer_current: "{{ tower_installer_dir }}/{{ tower_artifact | regex_replace('.tar.gz') }}"
+tower_installer_basedir_cmd: "tar --exclude='*/*' -tf {{ tower_installer_dir }}/{{ tower_artifact }}"
+
+#need to trim the trailing slash
+tower_installer_current: '{{ tower_installer_dir }}/{{ (lookup("pipe", tower_installer_basedir_cmd))[:-1] }}'
 
 # exclude tower_inventory_ha or tower_inventory_dr if only using one configuration
 tower_inventory_pm: inventory_ha_dr/inventory_pm
@@ -34,3 +32,6 @@ tower_db_external: false
 
 # indicate vault password file.  presence of this var indicates vault is used
 #tower_vault_file: .vault-pass
+
+#override RAM reqts
+tower_ram_override: false

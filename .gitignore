@@ -17,4 +17,6 @@ tower-vars.yml
 *~
 *.html
 *.pdf
+*.example
+.vagrant
 

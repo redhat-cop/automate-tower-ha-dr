@@ -10,19 +10,21 @@
       path: "{{ tower_inventory_file }}"
     register: tower_inventory_file_status
 
-  - fail:
+  - name: fail when tower install inventory not found
+    fail:
       msg: "{{ tower_inventory_file }} does not exist"
     when: not tower_inventory_file_status.stat.exists
 
   - debug:
-      msg: "setting inventory to {{tower_inventory_file}}"
+      msg: "setting inventory to {{ tower_inventory_file }}"
 
-  - name: "populate inventory ini with {{tower_inventory_file}}"
+  - name: "populate inventory ini with {{ tower_inventory_file }}"
     copy:
-      content: "{{tower_inventory_file}}"
+      content: "{{ tower_inventory_file }}"
       dest: "{{ tower_inventory_ini }}"
 
   - name: refresh_inventory
     meta: refresh_inventory
-
+  
   delegate_to: localhost
+  run_once: true

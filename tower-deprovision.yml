@@ -25,7 +25,7 @@
         url: "{{ tower_api_base }}{{ item['related']['instances'] }}"
       register: response
       changed_when: False
-      with_items: "{{ instance_groups.json.results }}"
+      loop: "{{ instance_groups.json.results }}"
 
     - name: set facts for configured instances
       set_fact:
@@ -46,7 +46,7 @@
 
     - name: deprovision instances not in inventory
       shell: "awx-manage deprovision_instance --hostname={{ item }}"
-      with_items: "{{tower_only_instances}}"
+      loop: "{{tower_only_instances}}"
       delegate_to: "{{tower_host}}"
       become: true
       when: not ansible_check_mode
