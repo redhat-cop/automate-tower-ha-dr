@@ -29,11 +29,13 @@ pg_database='awx'
 pg_username='awx'
 pg_password='password3'
 
-rabbitmq_port=5672
-rabbitmq_vhost=tower
-rabbitmq_username=tower
-rabbitmq_password='password2'
-rabbitmq_cookie=cookiemonster
+## rabbitmq vars only required <3.7
+
+#rabbitmq_port=5672
+#rabbitmq_vhost=tower
+#rabbitmq_username=tower
+#rabbitmq_password='password2'
+#rabbitmq_cookie=cookiemonster
 
 # Needs to be true for fqdns and ip addresses
-rabbitmq_use_long_name=true
+#rabbitmq_use_long_name=true
