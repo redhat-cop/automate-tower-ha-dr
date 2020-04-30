@@ -178,7 +178,7 @@ DR Failback
 
   ```
   # version of Ansible Tower to install/working with
-  tower_version: 3.6.3-1
+  tower_version: 3.7.0-1
 
   # determine EL bundle version to use
   tower_bundle_version: el7
@@ -199,7 +199,7 @@ DR Failback
 
 5. Run the `tower-setup.yml` playbook.  This playbook will download the tower installation media for you installation if `-e tower_download=1` is passed followed by a run of the installer.  The version to be downloaded and/or used in the installation is found in the `tower-vars.yml` file.
 
-    If you are running in a disconnected environment ensure the installer bundle is already downloaded.  For example for 3.6.3 ensure `tower-installer/ansible-tower-setup-bundle-3.6.3.-1.el7.tar.gz` is in place
+    If you are running in a disconnected environment ensure the installer bundle is already downloaded.  For example for 3.7.0 ensure `tower-installer/ansible-tower-setup-bundle-3.7.0.-1.el7.tar.gz` is in place
 
   ```
   ansible-playbook tower-setup.yml

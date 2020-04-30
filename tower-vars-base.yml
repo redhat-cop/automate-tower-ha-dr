@@ -2,7 +2,7 @@
 
 # NOTE assuming bundled instalaler
 
-tower_version: 3.6.3-1
+tower_version: 3.7.0-1
 
 # required for roles included from the installer
 bundle_install: true
