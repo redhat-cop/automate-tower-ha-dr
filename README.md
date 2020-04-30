@@ -5,6 +5,12 @@ Configure High Availability and/or Disaster Recovery on a Tower Cluster
 
 This toolkit is not officially supported by Red Hat Ansible support/engineering and is provided as is.  It is intended to be a starting point for a Red Hat Consulting delivery of Ansible Tower.
 
+**Tested Versions**
+
+This is a list of specifc versions of Ansible Tower that have been tested with this toolkit. It is **not** an exhaustive compatibility list.
+* 3.6.3
+* 3.7.0
+
 **Solution Reference Architecture**
 ![Ref Arch](readme_images/TowerClusterReferenceArch.png "Ref Arch")
 
