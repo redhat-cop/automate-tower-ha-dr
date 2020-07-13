@@ -2,18 +2,22 @@
 
 # NOTE assuming bundled instalaler
 
-tower_version: 3.7.0-1
+tower_version: 3.7.1-1
 
 # required for roles included from the installer
 bundle_install: true
 
-tower_bundle_version: el7
+# No el extension needed on >= 3.7
+# tower_bundle_version: el7
 
 #default download/extract location for installer
 tower_installer_dir: tower-installer
 
-# expected media file based on tower version. Assumes bundle with el extension (e.g .el7)
-tower_artifact: "ansible-tower-setup-bundle-{{ tower_version }}.{{ tower_bundle_version }}.tar.gz"
+# expected media file based on tower version. Assumes bundle with el extension (e.g .el7) on <= 3.6
+# tower_artifact: "ansible-tower-setup-bundle-{{ tower_version }}.{{ tower_bundle_version }}.tar.gz"
+
+# expected media file based on tower version. No el extension needed on >= 3.7
+tower_artifact: "ansible-tower-setup-bundle-{{ tower_version }}.tar.gz"
 
 #get the current installer directory
 tower_installer_basedir_cmd: "tar --exclude='*/*' -tf {{ tower_installer_dir }}/{{ tower_artifact }}"
