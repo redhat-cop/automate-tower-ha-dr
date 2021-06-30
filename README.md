@@ -3,7 +3,7 @@ Configure High Availability and/or Disaster Recovery on a Tower Cluster
 
 **Supportability**
 
-This toolkit is provided _**as-is**_ and is not officially supported by Red Hat Ansible support/engineering.  It is intended to be a starting point for a Red Hat Consulting delivery of Ansible Tower.
+This HA Toolkit is provided _**as-is**_ and is not officially supported by Red Hat Ansible support/engineering.  It is intended to be a starting point for a Red Hat Consulting delivery of Ansible Tower.
 
 **Solution Reference Architecture**
 ![Ref Arch](readme_images/TowerClusterReferenceArch.png "Ref Arch")
@@ -46,7 +46,7 @@ DR Failback
 
 - **only the Ansible Tower bundled installer is supported**
 
-- **For replicas, upgrades from Tower versions < 3.6 to Tower versions >= 3.6 will result postgres 9.6 being uninstalled and postgres 10 installed.  The postgres instance and data on the replicas will not be migrated/updated**
+- **Upgrading Tower from versions < 3.6 to Tower versions >= 3.6 will uninstall PostgreSQL 9.6 and install PostgreSQL 10.  This HA Toolkit will not migrate/update any PostgreSQL replicas.  As a result of the mismatched PostgreSQL versions, replication of the database may cease to function.**
 
 - Ansible control machine (RHEL 8 or CentOS 8) available and configured with *Ansible 2.9+*
 
