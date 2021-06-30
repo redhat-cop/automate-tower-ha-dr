@@ -36,7 +36,7 @@ DR Failback
 
 *Streaming Replication*
 
-[PostgreSQL](https://www.postgresql.org/) provides built in mechanisms to achieve increased availability.  The use of [warm standby or replica databases](https://www.postgresql.org/docs/9.3/static/warm-standby.html) allows for simple and fast failover in recovery scenarios.  
+[PostgreSQL](https://www.postgresql.org/) provides built in mechanisms to achieve increased availability.  The use of [warm standby or replica databases](https://www.postgresql.org/docs/10/warm-standby.html) allows for simple and fast failover in recovery scenarios.  
 
 ### Configuration
 
@@ -50,13 +50,13 @@ DR Failback
 
 - Ansible control machine (RHEL 8 or CentOS 8) available and configured with *Ansible 2.9+*
 
-- In order to use this toolkit you *must use key authentication*.  If you are not using the root account, need to escalate and escalation requires re-authorization you must put the `ansible_become_password` in your inventory files.  If you wish to used vaulted values in your inventory file(s) you need to set the `tower_vault_file` variables in the `tower-vars.yml`.  You also need to append `--vault-password-file` to any playbook runs listed below.
+- In order to use this toolkit you *must use key authentication*.  If you are not using the root account, need to escalate and escalation requires re-authorization you must put the `ansible_become_password` in your inventory files.  If you wish to use vaulted values in your inventory file(s) you need to set the `tower_vault_file` variables in the `tower_vars.yml`.  You also need to append `--vault-password-file` to any playbook runs listed below.
 
 - The bundle installation media will need to be placed in the `tower_installer` directory.  Please ensure the bundle is available before preceding.
 
 - The Ansible Tower installation inventory for each configuration will need to be defined.
 
-- This toolkit and the playbook suite is meant to be run by a one user at a time and one playbook at a time.   For example, do not try running multiple instances of the `tower-setup-replication.yml` playbook from the same playbook_dir.  Issues can arise because a dynamic inventory script is used with a tmp file indicating which file to load.  This mechanism allows you to effectively change the inventory during playbook execution.
+- This toolkit and the playbook suite is meant to be run by a one user at a time and one playbook at a time.   For example, do not try running multiple instances of the `tower_setup_replication.yml` playbook from the same playbook_dir.  Issues can arise because a dynamic inventory script is used with a tmp file indicating which file to load.  This mechanism allows you to effectively change the inventory during playbook execution.
 
 #### Setup
 
@@ -168,13 +168,13 @@ DR Failback
   <<CLIPPED>>
   ```
 
-3. Copy `tower-vars-base.yml` to `tower-vars.yml` for customization in your environments
+3. Copy `tower_vars_base.yml` to `tower_vars.yml` for customization in your environments
 
   ```
-  cp tower-vars-base.yml tower-vars.yml
+  cp tower_vars_base.yml tower_vars.yml
   ```
 
-4. Modify the `tower-vars.yml` file for your environment.  A description of the most commonly customized values are provided below. This includes definition of the inventory file for each configuration (primary/normal, HA, DR) and referencing their location.  **This file will be read in by all toolkit playbooks**
+4. Modify the `tower_vars.yml` file for your environment.  A description of the most commonly customized values are provided below. This includes definition of the inventory file for each configuration (primary/normal, HA, DR) and referencing their location.  **This file will be read in by all toolkit playbooks**
 
   ```
   # version of Ansible Tower to install/working with
@@ -197,24 +197,24 @@ DR Failback
   #tower_vault_file: .vault-pass
   ```
 
-5. Run the `tower-setup.yml` playbook.  This playbook will download the tower installation media for you installation if `-e tower_download=1` is passed followed by a run of the installer.  The version to be downloaded and/or used in the installation is found in the `tower-vars.yml` file.
+5. Run the `tower_setup.yml` playbook.  This playbook will download the tower installation media for you installation if `-e tower_download=1` is passed followed by a run of the installer.  The version to be downloaded and/or used in the installation is found in the `tower_vars.yml` file.
 
-    If you are running in a disconnected environment ensure the installer bundle is already downloaded.  For example for 3.6.3 ensure `tower-installer/ansible-tower-setup-bundle-3.6.3.-1.el7.tar.gz` is in place
-
-  ```
-  ansible-playbook tower-setup.yml
-  ```
-
-6. Run the `tower-dr-standup.yml` to prepare the failover cluster and configure replication.
+    If you are running in a disconnected environment ensure the installer bundle is already downloaded.  For example for 3.6.3 ensure `tower_installer/ansible-tower-setup-bundle-3.6.3.-1.el7.tar.gz` is in place
 
   ```
-  ansible-playbook tower-dr-standup.yml
+  ansible-playbook tower_setup.yml
+  ```
+
+6. Run the `tower_dr_standup.yml` to prepare the failover cluster and configure replication.
+
+  ```
+  ansible-playbook tower_dr_-_standup.yml
   ```
 
   If applicable, you may want to check the status of the replication
 
   ```
-  ansible-playbook tower-check-replication.yml
+  ansible-playbook tower_check_replication.yml
   ```
 
 
@@ -227,26 +227,26 @@ _only applicable if using an HA configuration_
 In the event of a database outage in the primary database the following playbook can be run to failover to the HA replica
 
 ```
-ansible-playbook tower-ha-failover.yml
+ansible-playbook tower_ha_failover.yml
 ```
 
 Once the primary database has been repaired you must re-enable replication to synchronize data before failing back.  Also ensure the `database_replica` group has the repaired database host if you took it out before doing the HA failover.  The easiest way to enable the replication is to re-run the failover playbook.
 
 ```
-ansible-playbook tower-ha-failover.yml
+ansible-playbook tower_ha_failover.yml
 ```
 
 This won't have any effect on the running cluster but will re-enable replication.  If you wish to be more targeted/explicit you can also run
 
 ```
-ansible-playbook -i INV_DIR/inventory_ha tower-setup-replication.yml
+ansible-playbook -i INV_DIR/inventory_ha tower_setup_replication.yml
 ```
 
 ##### HA Failback
 to failback to the original configuration
 
 ```
-ansible-playbook tower-ha-failover.yml -e 'tower_failback=1'
+ansible-playbook tower_ha_failover.yml -e 'tower_failback=1'
 ```
 #### DR Failover
 
@@ -255,7 +255,7 @@ _only applicable if using a DR configuration_
 In the event of a primary datacenter outage, the playbook can be run to failover to the secondary database (including pointing to the DR replica)
 
 ```
-ansible-playbook tower-dr-failover.yml
+ansible-playbook tower_dr_failover.yml
 ```
 
 ##### DR Failback
@@ -265,13 +265,13 @@ ansible-playbook tower-dr-failover.yml
 Once the primary datacenter has been repaired you must re-enable replication to synchronize data before failing back.  Also ensure the `database_replica` group has the repaired database host if you took it out before doing the DR failover.  The easiest way to enable the replication is to re-run the failover playbook
 
 ```
-ansible-playbook tower-dr-failover.yml
+ansible-playbook tower_dr_failover.yml
 ```
 
 This won't have any effect on the running cluster but will re-enable replication.  If you wish to be more targeted/explicit you can also run
 
 ```
-ansible-playbook -i INV_DIR/inventory_dr tower-setup-replication.yml
+ansible-playbook -i INV_DIR/inventory_dr tower_setup_replication.yml
 ```
 
 
@@ -280,7 +280,7 @@ ansible-playbook -i INV_DIR/inventory_dr tower-setup-replication.yml
 to failback to the original configuration
 
 ```
-ansible-playbook tower-dr-failover.yml -e 'tower_failback=1'
+ansible-playbook tower_dr_failover.yml -e 'tower_failback=1'
 ```
 
 **Backup and Restore**
