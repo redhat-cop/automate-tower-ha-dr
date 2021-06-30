@@ -35,9 +35,3 @@ all:
     pg_password: password3
     pg_port: '5432'
     pg_username: awx
-    rabbitmq_cookie: cookiemonster
-    rabbitmq_password: password2
-    rabbitmq_port: 5672
-    rabbitmq_use_long_name: 'true'
-    rabbitmq_username: tower
-    rabbitmq_vhost: tower
