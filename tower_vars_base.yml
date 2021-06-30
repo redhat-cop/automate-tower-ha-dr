@@ -1,19 +1,18 @@
 ---
-
 # NOTE assuming bundled instalaler
 
-tower_version: 3.6.3-1
+tower_version: 3.8.3-1
 
 # required for roles included from the installer
 bundle_install: true
 
-tower_bundle_version: el7
+tower_bundle_version: el8
 
 #default download/extract location for installer
-tower_installer_dir: tower-installer
+tower_installer_dir: tower_installer
 
 # expected media file based on tower version. Assumes bundle with el extension (e.g .el7)
-tower_artifact: "ansible-tower-setup-bundle-{{ tower_version }}.{{ tower_bundle_version }}.tar.gz"
+tower_artifact: "ansible_tower_setup_bundle_{{ tower_version }}.{{ tower_bundle_version }}.tar.gz"
 
 #get the current installer directory
 tower_installer_basedir_cmd: "tar --exclude='*/*' -tf {{ tower_installer_dir }}/{{ tower_artifact }}"
@@ -31,7 +30,8 @@ tower_inventory_ha: inventory_ha_dr/inventory_ha
 tower_db_external: false
 
 # indicate vault password file.  presence of this var indicates vault is used
-#tower_vault_file: .vault-pass
+#tower_vault_file: .vault_pass
 
 #override RAM reqts
 tower_ram_override: false
+...

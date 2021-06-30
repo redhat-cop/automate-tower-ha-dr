@@ -1,0 +1,7 @@
+---
+- import_playbook: tower_set_inventory_pm.yml
+
+- import_playbook: tower_setup_replication.yml
+
+- import_playbook: tower_check_replication.yml
+...

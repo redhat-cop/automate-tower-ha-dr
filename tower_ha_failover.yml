@@ -1,0 +1,52 @@
+---
+- hosts: localhost
+  become: false
+  gather_facts: no
+  tasks:
+    - set_fact:
+        tower_failover_type: ha
+
+- import_playbook: tower_set_inventory_pm.yml
+
+- import_playbook: tower_stop_services.yml
+
+- import_playbook: tower_set_inventory_ha.yml
+
+# when there is no replica, no action will be taken
+- import_playbook: tower_pgsql_promote.yml
+
+- name: setup inventory for HA site or primary site in failback and rerun tower installer
+  hosts: tower
+  vars_files: tower_vars.yml
+  vars:
+    _tower_eng_failover: "{{ tower_eng_failover | default(False) | bool }}"
+  tasks:
+    - name: Normal failover mechansim. Installer rerun
+      block:
+        - include_role:
+            name: tower_install
+          vars:
+            tower_install_inventory: "{{ ansible_inventory_sources[0] }}"
+            tower_install_directory: "{{ tower_installer_current }}"
+            tower_install_ram_override: "{{ tower_ram_override }}"
+      delegate_to: localhost
+      run_once: true
+      when: not _tower_eng_failover
+
+    - name: shortcut/engineering cluster failover
+      block:
+        - name: point tower to new master database
+          include_role:
+            name: tower_db_active
+
+        - name: perform rabbitmq and cluster setup
+          include_role:
+            name: tower_cluster
+
+      when: _tower_eng_failover
+      become: true
+
+- import_playbook: tower_setup_replication.yml
+
+- import_playbook: tower_check_replication.yml
+...

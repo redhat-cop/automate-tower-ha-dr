@@ -1,0 +1,49 @@
+---
+pkgs_to_remove:
+  - ansible-tower*
+  - rabbitmq-server*
+  - '*postgresql*'
+dep_pkgs_to_remove:
+  - ansible
+  - python2-jmespath
+  - apr
+  - apr-util
+  - bubblewrap
+  - erlang
+  - gd
+  - git
+  - gperftools-libs
+  - libXpm
+  - libgnome-keyring
+  - libsemanage-python
+  - libunwind
+  - memcached
+  - mercurial
+  - neon
+  - nginx*
+  - pakchois
+  - perl-Error
+  - perl-Git
+  - perl-TermReadKey
+  # postgresql96 and libs should be covered by pkgs_to_remove
+  #- postgresql96
+  #- postgresql96-libs
+  - python-devel
+  - python-meld3
+  - python-virtualenv
+  - rabbitmq-server
+  - socat
+  - subversion
+  - subversion-libs
+  - supervisor
+  - python-psycopg2
+  - setools-libs
+files_to_remove:
+  - /etc/tower
+  - /var/log/tower
+  - /etc/yum.repos.d/ansible-tower.repo
+parent_dirs_to_remove:
+  - /var/lib/pgsql
+  - /var/lib/awx
+  - /var/lib/rabbitmq
+...

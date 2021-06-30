@@ -1,5 +1,4 @@
 ---
-
 - name: Stop Tower services
   gather_facts: no
   hosts: tower
@@ -7,3 +6,4 @@
     - include_role:
         name: tower_service
         tasks_from: stop.yml
+...

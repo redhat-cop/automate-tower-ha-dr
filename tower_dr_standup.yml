@@ -1,31 +1,28 @@
 ---
-
 - name: point inventory to primary
-  import_playbook: tower-set-inventory-pm.yml
+  import_playbook: tower_set_inventory_pm.yml
 
 - name: obtain secret key value
   hosts: localhost
   gather_facts: no
   become: false
-  vars_files: tower-vars.yml
+  vars_files: tower_vars.yml
   tasks:
+    - name: obtain the SECRET_KEY value
+      include_role:
+        name: tower_secret_key
+        tasks_from: pull.yml
+      vars:
+        tower_secret_key_delegate: "{{ groups['tower'][0] }}"
 
-  - name: obtain the SECRET_KEY value
-    include_role:
-      name: tower_secret_key
-      tasks_from: pull.yml
-    vars:
-      tower_secret_key_delegate: "{{ groups['tower'][0] }}"
-
-- import_playbook: tower-set-inventory-dr.yml
+- import_playbook: tower_set_inventory_dr.yml
 
 - name: deploy secret key standby cluster
   hosts: tower
   gather_facts: no
-  vars_files: tower-vars.yml
+  vars_files: tower_vars.yml
   become: true
   tasks:
-
     - name: deploy secret key file
       include_role:
         name: tower_secret_key
@@ -40,8 +37,9 @@
     #     path: /var/log/tower
     #     state: absent
 
-- import_playbook: tower-set-inventory-pm.yml
+- import_playbook: tower_set_inventory_pm.yml
 
-- import_playbook: tower-setup-replication.yml
+- import_playbook: tower_setup_replication.yml
 
-- import_playbook: tower-check-replication.yml
+- import_playbook: tower_check_replication.yml
+...

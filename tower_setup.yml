@@ -1,0 +1,57 @@
+---
+- hosts: localhost
+  connection: local
+  become: false
+  vars_files: tower_vars.yml
+  vars:
+    tower_download: false
+    tower_download_force: false
+  tasks:
+    - name: ensure installer directory is present
+      file:
+        path: "{{ tower_installer_dir }}"
+        state: directory
+
+    - name: download tower installer
+      get_url:
+        url: "{{ tower_download_url }}"
+        dest: "{{ tower_installer_dir }}/{{ tower_artifact }}"
+        mode: 0644
+        force: "{{ tower_download_force | bool }}"
+      when: tower_download
+
+    - name: ensure installer already exists
+      stat:
+        path: "{{ tower_installer_dir }}/{{ tower_artifact }}"
+      register: artifact_status
+      failed_when: not artifact_status.stat.exists
+
+    - name: extract installer
+      command: "tar xzf {{ tower_artifact }}"
+      args:
+        chdir: "{{ tower_installer_dir }}"
+        creates: "{{ playbook_dir }}/{{ tower_installer_current }}"
+
+      # issues with running unarchive module with tar vs gtar
+      # unarchive:
+      #   src: "{{ tower_installer_dir }}/{{ tower_artifact }}"
+      #   dest: "{{ tower_installer_dir }}/"
+      #   remote_src: yes
+      #   creates: "{{ tower_installer_current }}"
+
+    - name: tower installation block
+      block:
+        - name: ensure inventory is pointed to primary
+          include_role:
+            name: tower_inventory
+          vars:
+            tower_inventory_file: "{{ tower_inventory_pm }}"
+
+        - name: run tower installer
+          include_role:
+            name: tower_install
+          vars:
+            tower_install_inventory: "{{ ansible_inventory_sources[0] }}"
+            tower_install_directory: "{{ tower_installer_current }}"
+            tower_install_ram_override: "{{ tower_ram_override }}"
+...

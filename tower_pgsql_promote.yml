@@ -1,11 +1,9 @@
 ---
-
 - name: Promote secondary HA/DR database to primary
   hosts: database
-  vars_files: tower-vars.yml
+  vars_files: tower_vars.yml
   become: true
   tasks:
-
     - name: import postgres role vars
       import_role:
         name: "{{tower_installer_current}}/roles/postgres"
@@ -55,3 +53,4 @@
       debug:
         msg: "Recovery mode is {{ recovery_mode.stdout.strip() == 'f' | ternary('FALSE', 'TRUE') }}"
       failed_when: recovery_mode.stdout.strip() != 'f'
+...

@@ -1,0 +1,57 @@
+---
+- hosts: all
+  gather_facts: no
+  become: true
+  pre_tasks:
+    - include_vars: tower_uninstall_vars.yml
+  tasks:
+    - name: ensure tower services are stopped
+      command: ansible-tower-service stop
+      ignore_errors: yes
+
+    - name: remove packages
+      yum:
+        name: "{{ pkgs_to_remove }}"
+        state: absent
+
+    - name: remove dep packages
+      yum:
+        name: "{{ dep_pkgs_to_remove }}"
+        state: absent
+      when: uninstall_deps | default(false)
+
+    - name: get awx dir list
+      find:
+        paths: "{{ parent_dirs_to_remove }}"
+        recurse: no
+        file_type: any
+      register: awx_paths
+
+    - name: set awx file list
+      set_fact:
+        awx_file_list: awx_paths.files | json_query('[*].path')
+
+    - name: cleanup files
+      file:
+        path: "{{ item }}"
+        state: absent
+      loop:
+        - "{{ files_to_remove }}"
+        - "{{ awx_file_list }}"
+
+    # handles case where top-level dir is a mountpoint
+    - name: cleanup parent directories
+      file:
+        path: "{{ item }}"
+        state: absent
+      loop: "{{ parent_dirs_to_remove }}"
+      ignore_errors: yes
+
+    - name: clean yum cache
+      command: "{{ item }}"
+      loop:
+      - "yum clean all"
+      - "rm -rf /var/cache/yum"
+
+# Review Support article for more information https://access.redhat.com/solutions/3107181
+...
