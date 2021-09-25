@@ -38,8 +38,8 @@
       pgsqlrep_role: master
       pgsqlrep_data_path: "{{ pg_conf_dir }}"
       pgsqlrep_service: "{{ postgres_init_name }}"
-      pgsqlrep_master_address: "{{ tower_replication_master_address }}"
-      pgsqlrep_replica_address: "{{ tower_replication_replica_address_list }}"
+      # pgsqlrep_master_address: "{{ tower_replication_master_address }}"
+      # pgsqlrep_replica_address: "{{ tower_replication_replica_address_list }}"
       pgsqlrep_bash: "{{ pg_bash | default('') }}"
       when: not tower_db_external
 
@@ -55,8 +55,8 @@
       pgsqlrep_role: replica
       pgsqlrep_data_path: "{{ pg_conf_dir }}"
       pgsqlrep_service: "{{ postgres_init_name }}"
-      pgsqlrep_master_address: "{{ tower_replication_master_address }}"
-      pgsqlrep_replica_address: "{{ tower_replication_replica_address_list }}"
+      # pgsqlrep_master_address: "{{ tower_replication_master_address }}"
+      # pgsqlrep_replica_address: "{{ tower_replication_replica_address_list }}"
       pgsqlrep_bash: "{{ pg_bash | default('') }}"
       when: not tower_db_external
 ...

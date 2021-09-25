@@ -13,7 +13,7 @@ pgsqlrep_wal_level: hot_standby
 pgsqlrep_wal_level_default: minimal
 
 
-pgsqlrep_max_wal_senders: "{{ groups[pgsqlrep_group_name] | length * 2 }}"
+pgsqlrep_max_wal_senders: "{{ groups['database_replica'] | length * 2 }}"
 pgsqlrep_max_wal_senders_default: 0
 pgsqlrep_wal_keep_segments: 100
 pgsqlrep_wal_keep_segments_default: 0
@@ -22,11 +22,11 @@ pgsqlrep_synchronous_commit_default: on
 pgsqlrep_application_name: awx
 #bundle_install: False
 
-pgsqlrep_group_name: database_replica
-pgsqlrep_group_name_master: database
+# pgsqlrep_group_name: database_replica
+# pgsqlrep_group_name_master: database
 
-pgsqlrep_master_address: "{{ hostvars[groups[pgsqlrep_group_name_master][0]].ansible_default_ipv4.address }}"
-pgsqlrep_replica_address: "{{ groups[pgsqlrep_group_name] | map('extract', hostvars, 'ansible_default_ipv4') | map(attribute='address') | list }}"
+pgsqlrep_master_address: "{{ hostvars[groups['database'][0]].ansible_default_ipv4.address }}"
+pgsqlrep_replica_address: "{{ groups['database_replica'] | map('extract', hostvars, 'ansible_default_ipv4') | map(attribute='address') | list }}"
 
 pgsqlrep_postgres_conf_lines:
   - apply:
